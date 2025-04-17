@@ -8,10 +8,22 @@
 
   <ItemGroup>
     <Folder Include="Configurations\" />
-    <Folder Include="Contexts\" />
     <Folder Include="Migrations\" />
     <Folder Include="Repositories\" />
     <Folder Include="SeedData\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.4">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VisualAmeco.Core\VisualAmeco.Core.csproj" />
   </ItemGroup>
 
 </Project>
