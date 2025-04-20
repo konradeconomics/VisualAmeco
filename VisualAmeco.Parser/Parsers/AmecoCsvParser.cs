@@ -4,41 +4,44 @@ using CsvHelper.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using VisualAmeco.Core.Entities;
+using VisualAmeco.Core.Interfaces;
 using VisualAmeco.Data.Contexts;
 using VisualAmeco.Parser.Utilities;
 
 namespace VisualAmeco.Parser.Parsers;
 
-public class AmecoCsvParser : ParserBase
+public class AmecoCsvParser : IAmecoCsvParser
 {
-    private readonly VisualAmecoDbContext _context;
+    private readonly ILogger<AmecoCsvParser> _logger;
     private readonly CsvFileReader _csvFileReader;
+    private readonly IChapterRepository _chapterRepository;
+    private readonly ISubchapterRepository _subchapterRepository;
+    private readonly IVariableRepository _variableRepository;
+    private readonly ICountryRepository _countryRepository;
+    private readonly IValueRepository _valueRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public AmecoCsvParser(ILogger logger, VisualAmecoDbContext context, CsvFileReader csvFileReader)
-        : base(logger)
+    public AmecoCsvParser(
+        ILogger<AmecoCsvParser> logger,
+        CsvFileReader csvFileReader,
+        IChapterRepository chapterRepository,
+        ISubchapterRepository subchapterRepository,
+        IVariableRepository variableRepository,
+        ICountryRepository countryRepository,
+        IValueRepository valueRepository,
+        IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _logger = logger;
         _csvFileReader = csvFileReader;
+        _chapterRepository = chapterRepository;
+        _subchapterRepository = subchapterRepository;
+        _variableRepository = variableRepository;
+        _countryRepository = countryRepository;
+        _valueRepository = valueRepository;
+        _unitOfWork = unitOfWork;
     }
 
-    public async Task ProcessAmecoFiles(List<string> filePaths)
-    {
-        foreach (var filePath in filePaths)
-        {
-            _logger.LogInformation($"Processing file: {filePath}");
-            bool success = await ParseAndSaveAsync(filePath);
-            if (success)
-            {
-                _logger.LogInformation($"Successfully processed: {filePath}");
-            }
-            else
-            {
-                _logger.LogError($"Failed to process: {filePath}");
-            }
-        }
-    }
-    
-    public override async Task<bool> ParseAndSaveAsync(string filePath)
+    public async Task<bool> ParseAndSaveAsync(string filePath)
     {
         try
         {
@@ -51,10 +54,9 @@ public class AmecoCsvParser : ParserBase
             }
 
             var header = records.First();
-
             var columnIndices = header
                 .Select((col, index) => new { col, index })
-                .Where(x => !int.TryParse(x.col, out _)) // Exclude year columns
+                .Where(x => !int.TryParse(x.col, out _))
                 .ToDictionary(x => x.col, x => x.index);
 
             var requiredColumns = new[] { "SERIES", "CNTRY", "TRN", "AGG", "UNIT", "REF", "CODE", "SUB-CHAPTER", "TITLE", "COUNTRY" };
@@ -68,151 +70,72 @@ public class AmecoCsvParser : ParserBase
             }
 
             var yearColumns = header
-                .Skip(columnIndices.Count) // Skip the fixed columns
-                .Where(col => int.TryParse(col, out _)) // Filter to keep only the year columns
+                .Skip(columnIndices.Count)
+                .Where(col => int.TryParse(col, out _))
                 .ToList();
 
             foreach (var row in records.Skip(1))
             {
-                // Use the column name lookup to find the correct column
-                string series = row[columnIndices["SERIES"]];
-                string countryCode = row[columnIndices["CNTRY"]];
-                string transformationType = row[columnIndices["TRN"]];
-                string aggregationMode = row[columnIndices["AGG"]];
-                string unit = row[columnIndices["UNIT"]];
-                string referenceCode = row[columnIndices["REF"]];
-                string variableCode = row[columnIndices["CODE"]];
-                string subchapterNameFromCsv = row[columnIndices["SUB-CHAPTER"]]; // Use the value from the CSV
-                string variableName = row[columnIndices["TITLE"]];
-                string countryName = row[columnIndices["COUNTRY"]];
-
-                // 1. Look up the Chapter name using the SubchapterToChapterMap
-                if (!SubchapterToChapterMap.Mapping.TryGetValue(subchapterNameFromCsv, out var chapterName))
+                string subchapterName = row[columnIndices["SUB-CHAPTER"]];
+                if (!SubchapterToChapterMap.Mapping.TryGetValue(subchapterName, out var chapterName))
                 {
-                    _logger.LogWarning($"Could not find a chapter mapping for subchapter: {subchapterNameFromCsv}. Using 'Unknown Chapter'.");
+                    _logger.LogWarning($"No chapter mapping for subchapter '{subchapterName}'. Using 'Unknown Chapter'.");
                     chapterName = "Unknown Chapter";
                 }
 
-                // 2. Find or create the Chapter
-                var chapter = await FindOrCreateChapterAsync(chapterName);
-                if (chapter == null) continue;
+                var chapter = await _chapterRepository.GetByNameAsync(chapterName)
+                              ?? new Chapter { Name = chapterName };
+                await _chapterRepository.AddAsync(chapter);
 
-                // 3. Find or create the Subchapter based on the SUB-CHAPTER name and chapter
-                var subchapter = await FindOrCreateSubchapterAsync(subchapterNameFromCsv, chapter);
-                if (subchapter == null) continue;
+                var subchapter = await _subchapterRepository.GetByNameAsync(subchapterName, chapter.Id)
+                                 ?? new Subchapter { Name = subchapterName, ChapterId = chapter.Id };
+                await _subchapterRepository.AddAsync(subchapter);
 
-                // 4. Find or create the Variable using the CODE, TITLE, UNIT, TRN, AGG, and REF
-                var variable = await FindOrCreateVariableAsync(variableCode, variableName, unit, subchapter);
-                if (variable == null) continue;
+                string variableCode = row[columnIndices["CODE"]];
+                string variableName = row[columnIndices["TITLE"]];
+                string unit = row[columnIndices["UNIT"]];
+                var variable = await _variableRepository.GetByCodeAsync(variableCode)
+                               ?? new Variable
+                               {
+                                   Code = variableCode,
+                                   Name = variableName,
+                                   Unit = unit,
+                                   SubChapterId = subchapter.Id
+                               };
+                await _variableRepository.AddAsync(variable);
+                
+                string countryCode = row[columnIndices["CNTRY"]];
+                string countryName = row[columnIndices["COUNTRY"]];
+                var country = await _countryRepository.GetByCodeAsync(countryCode)
+                              ?? new Country { Code = countryCode, Name = countryName };
+                await _countryRepository.AddAsync(country);
 
-                // 5. Find or create the Country based on the CNTRY code
-                var country = await FindOrCreateCountryAsync(countryCode, countryName);
-                if (country == null) continue;
-
-                // 6. Parse the dynamic record and create corresponding Value entities for each year
-                for (int i = 0; i < yearColumns.Count; i++)
+                foreach (var yearColumn in yearColumns)
                 {
-                    var yearColumn = yearColumns[i];
-                    int year = int.Parse(yearColumn); // Convert year string to integer
-                    decimal amount = decimal.TryParse(row[columnIndices[yearColumn]], out var parsedAmount) ? parsedAmount : 0;
+                    int year = int.Parse(yearColumn);
+                    decimal amount = decimal.TryParse(row[header.ToList().IndexOf(yearColumn)], out var val) ? val : 0;
 
-                    await CreateValueAsync(variable, country, year, null, amount, isMonthly: false);
+                    var value = new Value
+                    {
+                        VariableId = variable.Id,
+                        CountryId = country.Id,
+                        Year = year,
+                        Month = null,
+                        Amount = amount,
+                        IsMonthly = false
+                    };
+
+                    await _valueRepository.AddAsync(value);
                 }
             }
 
-            await _context.SaveChangesAsync(); // Commit changes to the database
+            await _unitOfWork.SaveChangesAsync();
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error while parsing CSV: {ex.Message}");
+            _logger.LogError(ex, $"Error while parsing file: {filePath}");
             return false;
         }
-    }
-
-    protected override async Task<Chapter?> FindOrCreateChapterAsync(string chapterName)
-    {
-        var chapter = await _context.Chapters
-            .FirstOrDefaultAsync(c => c.Name == chapterName);
-
-        if (chapter == null)
-        {
-            chapter = new Chapter { Name = chapterName };
-            _context.Chapters.Add(chapter);
-        }
-
-        return chapter;
-    }
-
-    protected override async Task<Subchapter?> FindOrCreateSubchapterAsync(string subchapterName, Chapter chapter)
-    {
-        var subchapter = await _context.Subchapters
-            .FirstOrDefaultAsync(s => s.Name == subchapterName && s.ChapterId == chapter.Id);
-
-        if (subchapter == null)
-        {
-            subchapter = new Subchapter
-            {
-                Name = subchapterName,
-                ChapterId = chapter.Id
-            };
-            _context.Subchapters.Add(subchapter);
-        }
-
-        return subchapter;
-    }
-
-    protected override async Task<Variable?> FindOrCreateVariableAsync(string variableCode, string variableName, string? unit, Subchapter subchapter)
-    {
-        var variable = await _context.Variables
-            .FirstOrDefaultAsync(v => v.Code == variableCode);
-
-        if (variable == null)
-        {
-            variable = new Variable
-            {
-                Code = variableCode,
-                Name = variableName,
-                Unit = unit,
-                SubChapterId = subchapter.Id
-            };
-            _context.Variables.Add(variable);
-        }
-
-        return variable;
-    }
-
-    protected override async Task<Country?> FindOrCreateCountryAsync(string countryCode, string countryName)
-    {
-        var country = await _context.Countries
-            .FirstOrDefaultAsync(c => c.Code == countryCode);
-
-        if (country == null)
-        {
-            country = new Country
-            {
-                Code = countryCode,
-                Name = countryName
-            };
-            _context.Countries.Add(country);
-        }
-
-        return country;
-    }
-
-    protected override async Task<Value> CreateValueAsync(Variable variable, Country country, int year, int? month, decimal amount, bool isMonthly)
-    {
-        var value = new Value
-        {
-            VariableId = variable.Id,
-            CountryId = country.Id,
-            Year = year,
-            Month = month,
-            Amount = amount,
-            IsMonthly = isMonthly
-        };
-
-        _context.Values.Add(value);
-        return value;
     }
 }
