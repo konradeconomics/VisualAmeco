@@ -6,7 +6,7 @@ class Program
     {
         Console.WriteLine("Parser Console App");
 
-        var csvReader = new CsvFileReader("../../../dummy.csv");
+        var csvReader = new CsvFileReader();
         var csvRecords = await csvReader.ReadFileAsync();
         Console.WriteLine("\nCSV Records:");
         foreach (var record in csvRecords)

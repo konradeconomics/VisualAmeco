@@ -41,15 +41,19 @@ public class AmecoCsvParser : IAmecoCsvParser
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<bool> ParseAndSaveAsync(string filePath)
+    public async Task<bool> ParseAndSaveAsync(List<string> filePaths)
     {
         try
         {
+            // Set the file paths dynamically
+            _csvFileReader.SetFilePaths(filePaths);
+
+            // Now read the data from the files
             var records = await _csvFileReader.ReadFileAsync();
 
             if (!records.Any())
             {
-                _logger.LogError("No records found in the CSV file.");
+                _logger.LogError("No records found in the CSV files.");
                 return false;
             }
 
@@ -74,7 +78,7 @@ public class AmecoCsvParser : IAmecoCsvParser
                 .Where(col => int.TryParse(col, out _))
                 .ToList();
 
-            foreach (var row in records.Skip(1))
+            foreach (var row in records.Skip(1)) // Skipping header
             {
                 string subchapterName = row[columnIndices["SUB-CHAPTER"]];
                 if (!SubchapterToChapterMap.Mapping.TryGetValue(subchapterName, out var chapterName))
@@ -103,7 +107,7 @@ public class AmecoCsvParser : IAmecoCsvParser
                                    SubChapterId = subchapter.Id
                                };
                 await _variableRepository.AddAsync(variable);
-                
+
                 string countryCode = row[columnIndices["CNTRY"]];
                 string countryName = row[columnIndices["COUNTRY"]];
                 var country = await _countryRepository.GetByCodeAsync(countryCode)
@@ -134,7 +138,7 @@ public class AmecoCsvParser : IAmecoCsvParser
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error while parsing file: {filePath}");
+            _logger.LogError(ex, "Error while parsing and saving data from CSV files.");
             return false;
         }
     }

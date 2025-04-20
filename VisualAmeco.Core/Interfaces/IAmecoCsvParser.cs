@@ -2,5 +2,5 @@ namespace VisualAmeco.Core.Interfaces;
 
 public interface IAmecoCsvParser
 {
-    Task<bool> ParseAndSaveAsync(string filePath);
+    Task<bool> ParseAndSaveAsync(List<string> filePaths);
 }
