@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using NUnitAssert = NUnit.Framework.Assert;
 using VisualAmeco.Data.Contexts;
 using VisualAmeco.Data.Repositories;
 using VisualAmeco.Parser.Parsers;
