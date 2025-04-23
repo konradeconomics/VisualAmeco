@@ -18,8 +18,9 @@ public class CsvFileReader : ICsvFileReader
         _filePaths = filePaths;
     }
 
-    public async Task<IEnumerable<string[]>> ReadFileAsync()
+    public async Task<IEnumerable<string[]>> ReadFileAsync(List<string> filePaths)
     {
+        SetFilePaths(filePaths);
         var allRecords = new List<string[]>();
 
         foreach (var filePath in _filePaths)

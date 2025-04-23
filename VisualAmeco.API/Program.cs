@@ -2,6 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using VisualAmeco.Core.Interfaces;
 using VisualAmeco.Data.Contexts;
 using VisualAmeco.Data.Repositories;
+using VisualAmeco.Parser.Models;
+using VisualAmeco.Parser.Parsers;
+using VisualAmeco.Parser.Services;
+using VisualAmeco.Parser.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +23,11 @@ builder.Services.AddScoped<IVariableRepository, VariableRepository>();
 builder.Services.AddScoped<ICountryRepository, CountryRepository>();
 builder.Services.AddScoped<IValueRepository, ValueRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IAmecoCsvParser, AmecoCsvParser>();
+builder.Services.AddScoped<ICsvRowMapper, CsvRowMapper>();
+builder.Services.AddScoped<IAmecoEntitySaver, AmecoEntitySaver>();
+builder.Services.AddScoped<ICsvFileReader, CsvFileReader>();
+
 
 var app = builder.Build();
 

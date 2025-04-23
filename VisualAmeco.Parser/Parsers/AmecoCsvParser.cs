@@ -1,145 +1,85 @@
-using System.Globalization;
-using CsvHelper;
-using CsvHelper.Configuration;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using VisualAmeco.Core.Entities;
 using VisualAmeco.Core.Interfaces;
-using VisualAmeco.Data.Contexts;
-using VisualAmeco.Parser.Utilities;
+using VisualAmeco.Parser.Services.Interfaces;
 
 namespace VisualAmeco.Parser.Parsers;
 
 public class AmecoCsvParser : IAmecoCsvParser
 {
+    private readonly ICsvFileReader _csvFileReader;
+    private readonly ICsvRowMapper _csvRowMapper;
+    private readonly IAmecoEntitySaver _entitySaver;
     private readonly ILogger<AmecoCsvParser> _logger;
-    private readonly CsvFileReader _csvFileReader;
-    private readonly IChapterRepository _chapterRepository;
-    private readonly ISubchapterRepository _subchapterRepository;
-    private readonly IVariableRepository _variableRepository;
-    private readonly ICountryRepository _countryRepository;
-    private readonly IValueRepository _valueRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
     public AmecoCsvParser(
-        ILogger<AmecoCsvParser> logger,
-        CsvFileReader csvFileReader,
-        IChapterRepository chapterRepository,
-        ISubchapterRepository subchapterRepository,
-        IVariableRepository variableRepository,
-        ICountryRepository countryRepository,
-        IValueRepository valueRepository,
-        IUnitOfWork unitOfWork)
+        ICsvFileReader csvFileReader,
+        ICsvRowMapper csvRowMapper,
+        IAmecoEntitySaver entitySaver,
+        ILogger<AmecoCsvParser> logger)
     {
-        _logger = logger;
         _csvFileReader = csvFileReader;
-        _chapterRepository = chapterRepository;
-        _subchapterRepository = subchapterRepository;
-        _variableRepository = variableRepository;
-        _countryRepository = countryRepository;
-        _valueRepository = valueRepository;
-        _unitOfWork = unitOfWork;
+        _csvRowMapper = csvRowMapper;
+        _entitySaver = entitySaver;
+        _logger = logger;
     }
 
     public async Task<bool> ParseAndSaveAsync(List<string> filePaths)
     {
-        try
+        var records = await _csvFileReader.ReadFileAsync(filePaths);
+
+        if (!records.Any())
         {
-            // Set the file paths dynamically
-            _csvFileReader.SetFilePaths(filePaths);
-
-            // Now read the data from the files
-            var records = await _csvFileReader.ReadFileAsync();
-
-            if (!records.Any())
-            {
-                _logger.LogError("No records found in the CSV files.");
-                return false;
-            }
-
-            var header = records.First();
-            var columnIndices = header
-                .Select((col, index) => new { col, index })
-                .Where(x => !int.TryParse(x.col, out _))
-                .ToDictionary(x => x.col, x => x.index);
-
-            var requiredColumns = new[] { "SERIES", "CNTRY", "TRN", "AGG", "UNIT", "REF", "CODE", "SUB-CHAPTER", "TITLE", "COUNTRY" };
-            foreach (var requiredColumn in requiredColumns)
-            {
-                if (!columnIndices.ContainsKey(requiredColumn))
-                {
-                    _logger.LogError($"Missing required column: {requiredColumn}");
-                    return false;
-                }
-            }
-
-            var yearColumns = header
-                .Skip(columnIndices.Count)
-                .Where(col => int.TryParse(col, out _))
-                .ToList();
-
-            foreach (var row in records.Skip(1)) // Skipping header
-            {
-                string subchapterName = row[columnIndices["SUB-CHAPTER"]];
-                if (!SubchapterToChapterMap.Mapping.TryGetValue(subchapterName, out var chapterName))
-                {
-                    _logger.LogWarning($"No chapter mapping for subchapter '{subchapterName}'. Using 'Unknown Chapter'.");
-                    chapterName = "Unknown Chapter";
-                }
-
-                var chapter = await _chapterRepository.GetByNameAsync(chapterName)
-                              ?? new Chapter { Name = chapterName };
-                await _chapterRepository.AddAsync(chapter);
-
-                var subchapter = await _subchapterRepository.GetByNameAsync(subchapterName, chapter.Id)
-                                 ?? new Subchapter { Name = subchapterName, ChapterId = chapter.Id };
-                await _subchapterRepository.AddAsync(subchapter);
-
-                string variableCode = row[columnIndices["CODE"]];
-                string variableName = row[columnIndices["TITLE"]];
-                string unit = row[columnIndices["UNIT"]];
-                var variable = await _variableRepository.GetByCodeAsync(variableCode)
-                               ?? new Variable
-                               {
-                                   Code = variableCode,
-                                   Name = variableName,
-                                   Unit = unit,
-                                   SubChapterId = subchapter.Id
-                               };
-                await _variableRepository.AddAsync(variable);
-
-                string countryCode = row[columnIndices["CNTRY"]];
-                string countryName = row[columnIndices["COUNTRY"]];
-                var country = await _countryRepository.GetByCodeAsync(countryCode)
-                              ?? new Country { Code = countryCode, Name = countryName };
-                await _countryRepository.AddAsync(country);
-
-                foreach (var yearColumn in yearColumns)
-                {
-                    int year = int.Parse(yearColumn);
-                    decimal amount = decimal.TryParse(row[header.ToList().IndexOf(yearColumn)], out var val) ? val : 0;
-
-                    var value = new Value
-                    {
-                        VariableId = variable.Id,
-                        CountryId = country.Id,
-                        Year = year,
-                        Month = null,
-                        Amount = amount,
-                        IsMonthly = false
-                    };
-
-                    await _valueRepository.AddAsync(value);
-                }
-            }
-
-            await _unitOfWork.SaveChangesAsync();
-            return true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while parsing and saving data from CSV files.");
+            _logger.LogWarning("No data found in the provided CSV files.");
             return false;
         }
+
+        var header = records.First();
+        var columnIndices = header
+            .Select((col, index) => new { col, index })
+            .Where(x => !int.TryParse(x.col, out _))
+            .ToDictionary(x => x.col, x => x.index);
+
+        var requiredColumns = new[]
+        {
+            "SERIES", "CNTRY", "TRN", "AGG", "UNIT", "REF",
+            "CODE", "SUB-CHAPTER", "TITLE", "COUNTRY"
+        };
+
+        foreach (var required in requiredColumns)
+        {
+            if (!columnIndices.ContainsKey(required))
+            {
+                _logger.LogError($"Missing required column: {required}");
+                return false;
+            }
+        }
+
+        var yearColumns = header
+            .Skip(columnIndices.Count)
+            .Where(col => int.TryParse(col, out _))
+            .ToList();
+
+        foreach (var row in records.Skip(1))
+        {
+            try
+            {
+                var mapResult = await _csvRowMapper.MapAsync(row, header, columnIndices, yearColumns);
+
+                if (!mapResult.IsSuccess)
+                {
+                    _logger.LogWarning($"Skipping row due to mapping error: {mapResult.ErrorMessage}");
+                    continue;
+                }
+
+                await _entitySaver.SaveAsync(mapResult.Value!);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing row");
+            }
+        }
+
+        _logger.LogInformation("Parsing and saving completed successfully.");
+        return true;
     }
 }
