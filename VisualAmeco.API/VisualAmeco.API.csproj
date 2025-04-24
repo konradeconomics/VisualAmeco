@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\VisualAmeco.Core\VisualAmeco.Core.csproj" />
     <ProjectReference Include="..\VisualAmeco.Data\VisualAmeco.Data.csproj" />
+    <ProjectReference Include="..\VisualAmeco.Parser\VisualAmeco.Parser.csproj" />
   </ItemGroup>
 
   <ItemGroup>
