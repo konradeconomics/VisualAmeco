@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Application\Application.csproj" />
+    <ProjectReference Include="..\VisualAmeco.Application\VisualAmeco.Application.csproj" />
     <ProjectReference Include="..\VisualAmeco.Core\VisualAmeco.Core.csproj" />
     <ProjectReference Include="..\VisualAmeco.Data\VisualAmeco.Data.csproj" />
   </ItemGroup>

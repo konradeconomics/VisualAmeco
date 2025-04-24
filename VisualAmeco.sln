@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisualAmeco.Parser", "Visua
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisualAmeco.Testing", "VisualAmeco.Testing\VisualAmeco.Testing.csproj", "{205E7704-886C-451D-A181-0489E2C67BCF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Application\Application.csproj", "{35A956A5-8304-48F8-AEAD-6130FE6CAD32}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisualAmeco.Application", "VisualAmeco.Application\VisualAmeco.Application.csproj", "{35A956A5-8304-48F8-AEAD-6130FE6CAD32}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
