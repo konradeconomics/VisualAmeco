@@ -1,4 +1,4 @@
-using VisualAmeco.Parser.Services.Interfaces;
+using VisualAmeco.Application.Interfaces;
 
 namespace VisualAmeco.Parser.Services;
 

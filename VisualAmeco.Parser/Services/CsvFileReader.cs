@@ -2,6 +2,7 @@ using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.Extensions.Logging;
+using VisualAmeco.Application.Interfaces;
 using VisualAmeco.Core.Interfaces;
 
 namespace VisualAmeco.Parser.Parsers;

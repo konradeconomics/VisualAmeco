@@ -1,7 +1,7 @@
 using System.Globalization;
 using Microsoft.Extensions.Logging;
-using VisualAmeco.Parser.Models;
-using VisualAmeco.Parser.Services.Interfaces;
+using VisualAmeco.Application.DTOs;
+using VisualAmeco.Application.Interfaces;
 namespace VisualAmeco.Parser.Services;
 
 public class CsvRowMapper : ICsvRowMapper 
