@@ -1,9 +1,10 @@
+using VisualAmeco.Application.DTOs;
+using VisualAmeco.Application.Interfaces;
 using VisualAmeco.Core.Entities;
 using VisualAmeco.Core.Interfaces;
-using VisualAmeco.Parser.Models;
-using VisualAmeco.Parser.Services.Interfaces;
 
-namespace VisualAmeco.Parser.Services;
+
+namespace VisualAmeco.Application.Services;
 
 public class AmecoEntitySaver : IAmecoEntitySaver
 {

@@ -1,4 +1,4 @@
-namespace VisualAmeco.Parser.Services.Interfaces;
+namespace VisualAmeco.Application.Interfaces;
 
 public interface ICsvHeaderValidator
 {
