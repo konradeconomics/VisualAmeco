@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using VisualAmeco.Application.Interfaces;
+using VisualAmeco.Application.Services;
 using VisualAmeco.Core.Interfaces;
 using VisualAmeco.Data.Contexts;
 using VisualAmeco.Data.Repositories;
-using VisualAmeco.Parser.Models;
 using VisualAmeco.Parser.Parsers;
 using VisualAmeco.Parser.Services;
-using VisualAmeco.Parser.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
