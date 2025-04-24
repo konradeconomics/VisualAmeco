@@ -2,12 +2,12 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using NUnit.Framework;
-using VisualAmeco.Core.Interfaces;
-using VisualAmeco.Parser.Models;
-using VisualAmeco.Parser.Parsers;
-using VisualAmeco.Parser.Services.Interfaces;
+using VisualAmeco.Application.DTOs;
+using VisualAmeco.Application.Interfaces;
+using VisualAmeco.Application.Services;
 
-namespace VisualAmeco.Testing.Parser.Parsers;
+
+namespace VisualAmeco.Testing.Application.Services;
 
 [TestFixture]
 public class AmecoCsvParserTests{
