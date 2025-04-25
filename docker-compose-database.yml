@@ -1,0 +1,23 @@
+# docker-compose-database.yml
+# Defines the PostgreSQL database service for local development.
+
+version: '3.8'
+
+services:
+  postgres_db:
+    image: postgres:16
+    container_name: visualameco_postgres_db
+    environment:
+      # Set database credentials - **DO NOT USE THESE IN PRODUCTION**
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_DB: visualameco_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - visualameco_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  visualameco_pgdata:
+    driver: local
