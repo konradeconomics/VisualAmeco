@@ -1,6 +1,6 @@
-using VisualAmeco.Parser.Models;
+using VisualAmeco.Application.DTOs;
 
-namespace VisualAmeco.Parser.Services.Interfaces;
+namespace VisualAmeco.Application.Interfaces;
 
 /// <summary>
 /// Maps a single row of CSV data based on header/context.

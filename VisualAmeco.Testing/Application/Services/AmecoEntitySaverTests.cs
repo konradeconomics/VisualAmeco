@@ -1,11 +1,11 @@
 using Moq;
 using NUnit.Framework;
+using VisualAmeco.Application.DTOs;
+using VisualAmeco.Application.Services;
 using VisualAmeco.Core.Entities;
 using VisualAmeco.Core.Interfaces;
-using VisualAmeco.Parser.Models;
-using VisualAmeco.Parser.Services;
 
-namespace VisualAmeco.Testing.Parser.Services;
+namespace VisualAmeco.Testing.Application.Services;
 
 [TestFixture]
 public class AmecoEntitySaverTests

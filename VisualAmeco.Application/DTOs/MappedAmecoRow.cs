@@ -1,4 +1,4 @@
-namespace VisualAmeco.Parser.Models;
+namespace VisualAmeco.Application.DTOs;
 
 public class MappedAmecoRow
 {

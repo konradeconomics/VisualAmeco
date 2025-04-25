@@ -1,9 +1,9 @@
 using System.Globalization;
 using Microsoft.Extensions.Logging;
-using VisualAmeco.Core.Interfaces;
-using VisualAmeco.Parser.Services.Interfaces;
+using VisualAmeco.Application.Interfaces;
 
-namespace VisualAmeco.Parser.Parsers;
+
+namespace VisualAmeco.Application.Services;
 
 public class AmecoCsvParser : IAmecoCsvParser
 {

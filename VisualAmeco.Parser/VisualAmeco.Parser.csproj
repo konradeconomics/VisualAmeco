@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\VisualAmeco.Application\VisualAmeco.Application.csproj" />
     <ProjectReference Include="..\VisualAmeco.Core\VisualAmeco.Core.csproj" />
     <ProjectReference Include="..\VisualAmeco.Data\VisualAmeco.Data.csproj" />
   </ItemGroup>
@@ -11,8 +12,12 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Interfaces\" />
+  </ItemGroup>
+
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

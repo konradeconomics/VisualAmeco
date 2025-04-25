@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisualAmeco.Parser", "Visua
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisualAmeco.Testing", "VisualAmeco.Testing\VisualAmeco.Testing.csproj", "{205E7704-886C-451D-A181-0489E2C67BCF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisualAmeco.Application", "VisualAmeco.Application\VisualAmeco.Application.csproj", "{35A956A5-8304-48F8-AEAD-6130FE6CAD32}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{205E7704-886C-451D-A181-0489E2C67BCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{205E7704-886C-451D-A181-0489E2C67BCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{205E7704-886C-451D-A181-0489E2C67BCF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35A956A5-8304-48F8-AEAD-6130FE6CAD32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35A956A5-8304-48F8-AEAD-6130FE6CAD32}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35A956A5-8304-48F8-AEAD-6130FE6CAD32}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35A956A5-8304-48F8-AEAD-6130FE6CAD32}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

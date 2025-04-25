@@ -1,4 +1,4 @@
-namespace VisualAmeco.Core.Interfaces;
+namespace VisualAmeco.Application.Interfaces;
 
 /// <summary>
 /// Saves the mapped AMECO entity.

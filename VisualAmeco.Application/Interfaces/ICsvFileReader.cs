@@ -1,4 +1,4 @@
-namespace VisualAmeco.Core.Interfaces;
+namespace VisualAmeco.Application.Interfaces;
 
 /// <summary>
 /// Reads a SINGLE CSV file, returning its header and rows.
