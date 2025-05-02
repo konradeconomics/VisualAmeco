@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 using VisualAmeco.Application.DTOs;
@@ -17,6 +18,7 @@ public class AmecoEntitySaverTests
     private Mock<ICountryRepository> _mockCountryRepo = null!;
     private Mock<IValueRepository> _mockValueRepo = null!;
     private Mock<IUnitOfWork> _mockUnitOfWork = null!;
+    private Mock<ILogger<AmecoEntitySaver>> _mockLogger = null!;
 
     // Instance of the class under test
     private AmecoEntitySaver _entitySaver = null!;
@@ -51,6 +53,7 @@ public class AmecoEntitySaverTests
         _mockCountryRepo = new Mock<ICountryRepository>();
         _mockValueRepo = new Mock<IValueRepository>();
         _mockUnitOfWork = new Mock<IUnitOfWork>();
+        _mockLogger = new Mock<ILogger<AmecoEntitySaver>>();
 
         // Create the saver instance, injecting the mock objects
         _entitySaver = new AmecoEntitySaver(
@@ -60,8 +63,8 @@ public class AmecoEntitySaverTests
             _mockCountryRepo.Object,
             _mockValueRepo.Object,
             _mockUnitOfWork.Object
+            , _mockLogger.Object
         );
-
         // --- Default Setup for Mocks (can be overridden in specific tests) ---
 
         // Default: Assume AddAsync completes successfully for all repos
