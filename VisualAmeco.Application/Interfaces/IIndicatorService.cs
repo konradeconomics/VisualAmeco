@@ -2,7 +2,7 @@
 
 using VisualAmeco.Application.DTOs;
 
-namespace VisualAmeco.Application.Interfaces;
+namespace Application.Interfaces;
 
 /// <summary>
 /// Defines the contract for a service that retrieves AMECO indicator data.
@@ -10,14 +10,20 @@ namespace VisualAmeco.Application.Interfaces;
 public interface IIndicatorService
 {
     /// <summary>
-    /// Retrieves a collection of indicators, typically including variable details,
-    /// country details, and time-series values.
+    /// Retrieves a collection of indicators based on optional filters.
     /// </summary>
+    /// <param name="countryCode">Optional country code filter.</param>
+    /// <param name="variableCode">Optional variable code filter.</param>
+    /// <param name="chapterName">Optional chapter name filter.</param>
+    /// <param name="subchapterName">Optional subchapter name filter.</param>
+    /// <param name="years">Optional list of specific years to include.</param>
     /// <param name="cancellationToken">Optional token to cancel the operation.</param>
     /// <returns>An asynchronous task returning an enumerable collection of IndicatorDto objects.</returns>
-    Task<IEnumerable<IndicatorDto>> GetIndicatorsAsync(CancellationToken cancellationToken = default);
-
-    // Future methods might include filtering/pagination:
-    // Task<IEnumerable<IndicatorDto>> GetIndicatorsAsync(string? countryCode = null, string? variableCode = null, int? startYear = null, int? endYear = null, CancellationToken cancellationToken = default);
-    // Task<IndicatorDto?> GetIndicatorAsync(string variableCode, string countryCode, CancellationToken cancellationToken = default);
+    Task<IEnumerable<IndicatorDto>> GetIndicatorsAsync(
+        string? countryCode = null,
+        string? variableCode = null,
+        string? chapterName = null,
+        string? subchapterName = null,
+        List<int>? years = null,
+        CancellationToken cancellationToken = default);
 }
