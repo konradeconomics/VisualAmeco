@@ -108,28 +108,32 @@ public class AmecoEntitySaverTests
     {
         // Arrange
         var mappedRow = CreateSampleMappedRow();
+        Chapter? capturedChapter = null;
+        Subchapter? capturedSubchapter = null;
+        Variable? capturedVariable = null;
+        Country? capturedCountry = null;
+
 
         // Setup Mocks: All "Get" methods return null (entity doesn't exist)
         _mockChapterRepo.Setup(r => r.GetByNameAsync(TestChapterName)).ReturnsAsync((Chapter?)null);
-        // Need to simulate ID assignment for subsequent lookups/FKs.
-        // Moq Callback can simulate this. Assumes AddAsync sets the ID.
+        // Simulate ID assignment using Callback
         _mockChapterRepo.Setup(r => r.AddAsync(It.IsAny<Chapter>()))
-            .Callback<Chapter>(c => c.Id = ChapterId) // Simulate setting ID on Add
+            .Callback<Chapter>(c => { c.Id = ChapterId; capturedChapter = c; }) // Capture and assign ID
             .Returns(Task.CompletedTask);
 
-        _mockSubchapterRepo.Setup(r => r.GetByNameAsync(TestSubchapterName, ChapterId)).ReturnsAsync((Subchapter?)null);
+        _mockSubchapterRepo.Setup(r => r.GetByNameAsync(TestSubchapterName, It.IsAny<int>())).ReturnsAsync((Subchapter?)null); // Use It.IsAny for potentially 0 ID
         _mockSubchapterRepo.Setup(r => r.AddAsync(It.IsAny<Subchapter>()))
-            .Callback<Subchapter>(s => s.Id = SubchapterId)
+            .Callback<Subchapter>(s => { s.Id = SubchapterId; capturedSubchapter = s; })
             .Returns(Task.CompletedTask);
 
         _mockVariableRepo.Setup(r => r.GetByCodeAsync(TestVariableCode)).ReturnsAsync((Variable?)null);
         _mockVariableRepo.Setup(r => r.AddAsync(It.IsAny<Variable>()))
-            .Callback<Variable>(v => v.Id = VariableId)
+            .Callback<Variable>(v => { v.Id = VariableId; capturedVariable = v; })
             .Returns(Task.CompletedTask);
 
         _mockCountryRepo.Setup(r => r.GetByCodeAsync(TestCountryCode)).ReturnsAsync((Country?)null);
         _mockCountryRepo.Setup(r => r.AddAsync(It.IsAny<Country>()))
-            .Callback<Country>(c => c.Id = CountryId)
+            .Callback<Country>(c => { c.Id = CountryId; capturedCountry = c; })
             .Returns(Task.CompletedTask);
 
 
@@ -140,28 +144,28 @@ public class AmecoEntitySaverTests
 
         // Verify Gets were called
         _mockChapterRepo.Verify(r => r.GetByNameAsync(TestChapterName), Times.Once);
-        _mockSubchapterRepo.Verify(r => r.GetByNameAsync(TestSubchapterName, ChapterId), Times.Once); // Ensure correct ChapterId used
+        // Verify Subchapter Get was called (might be with ID 0 if chapter was new)
+        _mockSubchapterRepo.Verify(r => r.GetByNameAsync(TestSubchapterName, It.IsAny<int>()), Times.Once);
         _mockVariableRepo.Verify(r => r.GetByCodeAsync(TestVariableCode), Times.Once);
         _mockCountryRepo.Verify(r => r.GetByCodeAsync(TestCountryCode), Times.Once);
 
-        // Verify Adds were called with correct data (using It.Is to check properties)
+        // Verify Adds were called with correct data
         _mockChapterRepo.Verify(r => r.AddAsync(It.Is<Chapter>(c => c.Name == TestChapterName)), Times.Once);
-        _mockSubchapterRepo.Verify(r => r.AddAsync(It.Is<Subchapter>(s => s.Name == TestSubchapterName && s.ChapterId == ChapterId)), Times.Once);
-        _mockVariableRepo.Verify(r => r.AddAsync(It.Is<Variable>(v => v.Code == TestVariableCode && v.Name == TestVariableName && v.Unit == TestUnit && v.SubChapterId == SubchapterId)), Times.Once);
+        _mockSubchapterRepo.Verify(r => r.AddAsync(It.Is<Subchapter>(s => s.Name == TestSubchapterName && s.Chapter == capturedChapter)), Times.Once);
+        _mockVariableRepo.Verify(r => r.AddAsync(It.Is<Variable>(v => v.Code == TestVariableCode && v.Name == TestVariableName && v.Unit == TestUnit && v.SubChapter == capturedSubchapter)), Times.Once);
         _mockCountryRepo.Verify(r => r.AddAsync(It.Is<Country>(c => c.Code == TestCountryCode && c.Name == TestCountryName)), Times.Once);
 
-        // Verify Value adds were called twice (once for each year) with correct FKs
+        // Verify Value adds were called twice (once for each year) linking to the NEWLY created parents
         _mockValueRepo.Verify(r => r.AddAsync(It.Is<Value>(v =>
-            v.VariableId == VariableId &&
-            v.CountryId == CountryId &&
+            v.Variable == capturedVariable && // Check navigation property link
+            v.Country == capturedCountry &&   // Check navigation property link
             v.Year == TestYear2020 &&
             v.Amount == TestAmount2020)), Times.Once);
         _mockValueRepo.Verify(r => r.AddAsync(It.Is<Value>(v =>
-            v.VariableId == VariableId &&
-            v.CountryId == CountryId &&
+            v.Variable == capturedVariable &&
+            v.Country == capturedCountry &&
             v.Year == TestYear2021 &&
             v.Amount == TestAmount2021)), Times.Once);
-        // Verify AddAsync was called exactly twice for Value
         _mockValueRepo.Verify(r => r.AddAsync(It.IsAny<Value>()), Times.Exactly(mappedRow.Values.Count));
 
 
@@ -180,8 +184,8 @@ public class AmecoEntitySaverTests
 
         // Setup Mocks: All "Get" methods return existing entities
         var existingChapter = new Chapter { Id = ChapterId, Name = TestChapterName };
-        var existingSubchapter = new Subchapter { Id = SubchapterId, Name = TestSubchapterName, ChapterId = ChapterId };
-        var existingVariable = new Variable { Id = VariableId, Code = TestVariableCode, Name = "Old Name", Unit = "Old Unit", SubChapterId = SubchapterId }; // Note: Existing data might differ slightly
+        var existingSubchapter = new Subchapter { Id = SubchapterId, Name = TestSubchapterName, ChapterId = ChapterId, Chapter = existingChapter }; // Include nav prop if needed by saver
+        var existingVariable = new Variable { Id = VariableId, Code = TestVariableCode, Name = "Old Name", Unit = "Old Unit", SubChapterId = SubchapterId, SubChapter = existingSubchapter };
         var existingCountry = new Country { Id = CountryId, Code = TestCountryCode, Name = TestCountryName };
 
         _mockChapterRepo.Setup(r => r.GetByNameAsync(TestChapterName)).ReturnsAsync(existingChapter);
@@ -192,7 +196,7 @@ public class AmecoEntitySaverTests
         // Act
         await _entitySaver.SaveAsync(mappedRow);
 
-        // Assert
+        // Assert / Verify Mock Interactions
 
         // Verify Gets were called
         _mockChapterRepo.Verify(r => r.GetByNameAsync(TestChapterName), Times.Once);
@@ -200,21 +204,22 @@ public class AmecoEntitySaverTests
         _mockVariableRepo.Verify(r => r.GetByCodeAsync(TestVariableCode), Times.Once);
         _mockCountryRepo.Verify(r => r.GetByCodeAsync(TestCountryCode), Times.Once);
 
-        // Verify Parent AddAsync calls - assuming AddAsync does NOT update existing
-        _mockChapterRepo.Verify(r => r.AddAsync(It.IsAny<Chapter>()), Times.Once); // Still called once, but logic inside uses existing
-        _mockSubchapterRepo.Verify(r => r.AddAsync(It.IsAny<Subchapter>()), Times.Once);
-        _mockVariableRepo.Verify(r => r.AddAsync(It.IsAny<Variable>()), Times.Once);
-        _mockCountryRepo.Verify(r => r.AddAsync(It.IsAny<Country>()), Times.Once);
+        // *** FIX: Verify Parent AddAsync calls were NOT made ***
+        _mockChapterRepo.Verify(r => r.AddAsync(It.IsAny<Chapter>()), Times.Never);
+        _mockSubchapterRepo.Verify(r => r.AddAsync(It.IsAny<Subchapter>()), Times.Never);
+        _mockVariableRepo.Verify(r => r.AddAsync(It.IsAny<Variable>()), Times.Never);
+        _mockCountryRepo.Verify(r => r.AddAsync(It.IsAny<Country>()), Times.Never);
 
-        // Verify Value adds were called twice with correct EXISTING parent FKs
+
+        // Verify Value adds were called twice with correct EXISTING parent FKs/Nav properties
         _mockValueRepo.Verify(r => r.AddAsync(It.Is<Value>(v =>
-            v.VariableId == existingVariable.Id &&
-            v.CountryId == existingCountry.Id &&
+            v.Variable == existingVariable && // Check navigation property link
+            v.Country == existingCountry &&  // Check navigation property link
             v.Year == TestYear2020 &&
             v.Amount == TestAmount2020)), Times.Once);
         _mockValueRepo.Verify(r => r.AddAsync(It.Is<Value>(v =>
-            v.VariableId == existingVariable.Id &&
-            v.CountryId == existingCountry.Id && 
+            v.Variable == existingVariable &&
+            v.Country == existingCountry &&
             v.Year == TestYear2021 &&
             v.Amount == TestAmount2021)), Times.Once);
         _mockValueRepo.Verify(r => r.AddAsync(It.IsAny<Value>()), Times.Exactly(mappedRow.Values.Count));
