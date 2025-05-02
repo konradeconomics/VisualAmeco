@@ -31,9 +31,54 @@ public class ValueRepository : IValueRepository
     {
         var query = _context.Values
             .Include(value => value.Variable)
-            .ThenInclude(variable => variable!.SubChapter)
-            .ThenInclude(subchapter => subchapter!.Chapter)
+            .ThenInclude(variable => variable.SubChapter)
+            .ThenInclude(subchapter => subchapter.Chapter)
             .Include(value => value.Country);
+
+        var values = await query
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return values;
+    }
+    
+    public async Task<List<Value>> GetFilteredWithDetailsAsync(
+            string? countryCode = null,
+            string? variableCode = null,
+            string? chapterName = null,
+            string? subchapterName = null,
+            List<int>? years = null,
+            CancellationToken cancellationToken = default)
+    {
+        var query = _context.Values
+            .Include(v => v.Variable)
+            .ThenInclude(va => va.SubChapter)
+            .ThenInclude(s => s.Chapter)
+            .Include(v => v.Country)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(countryCode))
+        {
+            query = query.Where(v => v.Country.Code.ToUpper() == countryCode.ToUpper());
+        }
+        if (!string.IsNullOrWhiteSpace(variableCode))
+        {
+            query = query.Where(v => v.Variable.Code.ToUpper() == variableCode.ToUpper());
+        }
+        if (!string.IsNullOrWhiteSpace(chapterName))
+        {
+            query = query.Where(v => v.Variable.SubChapter.Chapter.Name == chapterName);
+        }
+        if (!string.IsNullOrWhiteSpace(subchapterName))
+        {
+            query = query.Where(v => v.Variable.SubChapter.Name == subchapterName);
+        }
+
+        if (years != null && years.Any())
+        {
+            query = query.Where(v => years.Contains(v.Year));
+        }
+
 
         var values = await query
             .AsNoTracking()
