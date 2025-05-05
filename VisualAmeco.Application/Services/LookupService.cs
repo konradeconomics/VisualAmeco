@@ -45,4 +45,29 @@ public class LookupService : ILookupService
             throw;
         }
     }
+
+
+    public async Task<IEnumerable<ChapterDto>> GetAllChaptersAsync()
+    {
+        _logger.LogInformation("Fetching all chapters.");
+        try
+        {
+            var chapters = await _countryRepository.GetAllAsync();
+
+            var chapterDtos = chapters
+                .Select(c => new ChapterDto
+                {
+                    Name = c.Name ?? "N/A"
+                })
+                .ToList();
+
+            _logger.LogInformation("Returning {Count} chapters.", chapterDtos.Count);
+            return chapterDtos;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while fetching all chapters.");
+            throw;
+        }
+    }
 }
