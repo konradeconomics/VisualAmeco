@@ -13,9 +13,11 @@ public class LookupService : ILookupService
     
     public LookupService(
         ICountryRepository countryRepository,
+        IChapterRepository chapterRepository,
         ILogger<LookupService> logger)
     {
         _countryRepository = countryRepository ?? throw new ArgumentNullException(nameof(countryRepository));
+        _chapterRepository = chapterRepository ?? throw new ArgumentNullException(nameof(chapterRepository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
     
