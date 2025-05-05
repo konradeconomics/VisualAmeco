@@ -26,4 +26,16 @@ public interface IIndicatorService
         string? subchapterName = null,
         List<int>? years = null,
         CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Retrieves a single specific indicator time series by variable code and country code.
+    /// </summary>
+    /// <param name="variableCode">The unique variable code.</param>
+    /// <param name="countryCode">The unique country code.</param>
+    /// <param name="cancellationToken">Optional token to cancel the operation.</param>
+    /// <returns>An asynchronous task returning the matching IndicatorDto or null if not found.</returns>
+    Task<IndicatorDto?> GetSpecificIndicatorAsync(
+        string variableCode,
+        string countryCode,
+        CancellationToken cancellationToken = default);
 }
