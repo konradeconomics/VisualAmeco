@@ -164,7 +164,7 @@ public class IndicatorServiceTests
             .ReturnsAsync(mockValues);
 
         // Act
-        var result = await _service.GetIndicatorsAsync(); // No filters applied
+        var result = await _service.GetIndicatorsAsync();
         var resultList = result.ToList();
 
         // Assert
@@ -280,5 +280,144 @@ public class IndicatorServiceTests
         Assert.AreEqual(testException.Message, thrown?.Message);
         _mockValueRepo.Verify(r => r.GetFilteredWithDetailsAsync(
             null, null, null, null, null, It.IsAny<CancellationToken>()), Times.Once);
+    }
+    
+    /// <summary>
+    /// Tests that GetSpecificIndicatorAsync returns the correct DTO when the repository finds data.
+    /// </summary>
+    [Test]
+    public async Task GetSpecificIndicatorAsync_WhenDataExists_ReturnsMappedIndicatorDto()
+    {
+        // Arrange
+        string targetVariableCode = "VAR1";
+        string targetCountryCode = "C1";
+        var mockValues = new List<Value>
+        {
+            CreateTestValue(1, 2021, 100m, _variable1, _country1),
+            CreateTestValue(2, 2020, 90m, _variable1, _country1) // Include multiple years for same indicator
+        };
+
+        _mockValueRepo.Setup(r => r.GetFilteredWithDetailsAsync(
+                targetCountryCode, targetVariableCode, null, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockValues);
+
+        // Act
+        var result = await _service.GetSpecificIndicatorAsync(targetVariableCode, targetCountryCode);
+
+        // Assert
+        Assert.IsNotNull(result, "Result DTO should not be null when data exists.");
+        Assert.AreEqual(targetVariableCode, result!.VariableCode);
+        Assert.AreEqual("Variable One", result.VariableName);
+        Assert.AreEqual("U1", result.Unit);
+        Assert.AreEqual("Subchapter 1.1", result.SubchapterName);
+        Assert.AreEqual("Chapter One", result.ChapterName);
+        Assert.AreEqual(targetCountryCode, result.CountryCode);
+        Assert.AreEqual("Country One", result.CountryName);
+        Assert.AreEqual(2, result.Values.Count, "Should contain values for both years.");
+        Assert.AreEqual(2020, result.Values[0].Year, "Values should be ordered by year."); // Verify ordering
+        Assert.AreEqual(90m, result.Values[0].Amount);
+        Assert.AreEqual(2021, result.Values[1].Year);
+        Assert.AreEqual(100m, result.Values[1].Amount);
+
+        // Verify repository was called correctly
+        _mockValueRepo.Verify(r => r.GetFilteredWithDetailsAsync(
+            targetCountryCode, targetVariableCode, null, null, null, It.IsAny<CancellationToken>()), Times.Once);
+    }
+    
+    /// <summary>
+    /// Tests that GetSpecificIndicatorAsync returns null when the repository returns an empty list.
+    /// </summary>
+    [Test]
+    public async Task GetSpecificIndicatorAsync_WhenRepoReturnsEmpty_ReturnsNull()
+    {
+        // Arrange
+        string targetVariableCode = "VAR_NONE";
+        string targetCountryCode = "C_NONE";
+        var mockValues = new List<Value>(); // Empty list
+
+        _mockValueRepo.Setup(r => r.GetFilteredWithDetailsAsync(
+                targetCountryCode, targetVariableCode, null, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockValues);
+
+        // Act
+        var result = await _service.GetSpecificIndicatorAsync(targetVariableCode, targetCountryCode);
+
+        // Assert
+        Assert.IsNull(result, "Result should be null when repository returns no data.");
+        _mockValueRepo.Verify(r => r.GetFilteredWithDetailsAsync(
+            targetCountryCode, targetVariableCode, null, null, null, It.IsAny<CancellationToken>()), Times.Once);
+    }
+    
+    /// <summary>
+    /// Tests that GetSpecificIndicatorAsync returns null when the repository returns null.
+    /// </summary>
+    [Test]
+    public async Task GetSpecificIndicatorAsync_WhenRepoReturnsNull_ReturnsNull()
+    {
+        // Arrange
+        string targetVariableCode = "VAR_ERR";
+        string targetCountryCode = "C_ERR";
+
+        _mockValueRepo.Setup(r => r.GetFilteredWithDetailsAsync(
+                targetCountryCode, targetVariableCode, null, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((List<Value>?)null);
+
+        // Act
+        var result = await _service.GetSpecificIndicatorAsync(targetVariableCode, targetCountryCode);
+
+        // Assert
+        Assert.IsNull(result, "Result should be null when repository returns null.");
+        _mockValueRepo.Verify(r => r.GetFilteredWithDetailsAsync(
+            targetCountryCode, targetVariableCode, null, null, null, It.IsAny<CancellationToken>()), Times.Once);
+    }
+    
+    /// <summary>
+    /// Tests that GetSpecificIndicatorAsync returns null if essential related data is missing,
+    /// even if Value records are returned by the repository.
+    /// </summary>
+    [Test]
+    public async Task GetSpecificIndicatorAsync_WhenRepoReturnsDataWithMissingRelations_ReturnsNull()
+    {
+        // Arrange
+        string targetVariableCode = "VAR_BAD";
+        string targetCountryCode = "C_BAD";
+        var mockValues = new List<Value> {
+            new Value { Id = 5, Year = 2020, Amount = 50m, VariableId = 999, CountryId = 999, Variable = null!, Country = new Country{Id=999, Code=targetCountryCode}}
+        };
+
+        _mockValueRepo.Setup(r => r.GetFilteredWithDetailsAsync(
+                targetCountryCode, targetVariableCode, null, null, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockValues);
+
+        // Act
+        var result = await _service.GetSpecificIndicatorAsync(targetVariableCode, targetCountryCode);
+
+        // Assert
+        Assert.IsNull(result, "Result should be null when essential related data (like Variable) is missing.");
+        _mockValueRepo.Verify(r => r.GetFilteredWithDetailsAsync(
+            targetCountryCode, targetVariableCode, null, null, null, It.IsAny<CancellationToken>()), Times.Once);
+    }
+    
+    /// <summary>
+    /// Tests that GetSpecificIndicatorAsync propagates exceptions from the repository.
+    /// </summary>
+    [Test]
+    public void GetSpecificIndicatorAsync_WhenRepoThrows_ThrowsException()
+    {
+        // Arrange
+        string targetVariableCode = "VAR_EX";
+        string targetCountryCode = "C_EX";
+        var testException = new InvalidOperationException("Repo failed");
+
+        _mockValueRepo.Setup(r => r.GetFilteredWithDetailsAsync(
+                targetCountryCode, targetVariableCode, null, null, null, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(testException);
+
+        // Act & Assert
+        var thrown = Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await _service.GetSpecificIndicatorAsync(targetVariableCode, targetCountryCode));
+        Assert.AreEqual(testException.Message, thrown?.Message);
+        _mockValueRepo.Verify(r => r.GetFilteredWithDetailsAsync(
+            targetCountryCode, targetVariableCode, null, null, null, It.IsAny<CancellationToken>()), Times.Once);
     }
 }
