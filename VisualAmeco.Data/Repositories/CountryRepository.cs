@@ -19,4 +19,12 @@ public class CountryRepository : ICountryRepository
     
     public async Task AddAsync(Country country)
         => await _context.Countries.AddAsync(country);
+    
+    public async Task<IEnumerable<Country>> GetAllAsync()
+    {
+        return await _context.Countries
+            .AsNoTracking()
+            .OrderBy(c => c.Name)
+            .ToListAsync();
+    }
 }
