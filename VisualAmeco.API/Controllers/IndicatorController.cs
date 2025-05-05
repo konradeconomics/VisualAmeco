@@ -72,4 +72,45 @@ public class IndicatorsController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, "An internal error occurred while retrieving indicators.");
         }
     }
+    
+    /// <summary>
+    /// Gets a specific AMECO indicator time series by variable and country codes.
+    /// </summary>
+    /// <param name="variableCode">The unique variable code (e.g., NPTD).</param>
+    /// <param name="countryCode">The unique country code (e.g., DE, EU27).</param>
+    /// <param name="cancellationToken">Optional cancellation token.</param>
+    /// <returns>The requested indicator or a Not Found response.</returns>
+    /// <response code="200">Returns the specific indicator data.</response>
+    /// <response code="404">If the indicator for the specified variable/country code combination is not found.</response>
+    /// <response code="500">If an internal server error occurs.</response>
+    [HttpGet("{variableCode}/{countryCode}")] // Handles GET /api/indicators/CODE/COUNTRY
+    [ProducesResponseType(typeof(IndicatorDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<IndicatorDto>> GetSpecificIndicator(
+        string variableCode,
+        string countryCode,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            _logger.LogInformation("GET /api/indicators/{VariableCode}/{CountryCode} invoked.", variableCode, countryCode);
+
+            var indicator = await _indicatorService.GetSpecificIndicatorAsync(variableCode, countryCode, cancellationToken);
+
+            if (indicator == null)
+            {
+                _logger.LogInformation("Indicator not found for Variable={VariableCode}, Country={CountryCode}.", variableCode, countryCode);
+                return NotFound();
+            }
+
+            _logger.LogInformation("Returning specific indicator for Variable={VariableCode}, Country={CountryCode}.", variableCode, countryCode);
+            return Ok(indicator);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error occurred while getting specific indicator for Variable={VariableCode}, Country={CountryCode}.", variableCode, countryCode);
+            return StatusCode(StatusCodes.Status500InternalServerError, "An internal error occurred while retrieving the indicator.");
+        }
+    }
 }

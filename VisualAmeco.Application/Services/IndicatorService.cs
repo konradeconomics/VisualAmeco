@@ -45,13 +45,12 @@ public class IndicatorService : IIndicatorService
 
         try
         {
-            // Call the repository method, passing filters through
             var filteredValuesWithDetails = await _valueRepository.GetFilteredWithDetailsAsync(
                 countryCode,
                 variableCode,
                 chapterName,
                 subchapterName,
-                years, // Pass the list of years
+                years,
                 cancellationToken);
 
             if (filteredValuesWithDetails == null || !filteredValuesWithDetails.Any())
@@ -61,26 +60,21 @@ public class IndicatorService : IIndicatorService
             }
             _logger.LogDebug("Retrieved {ValueCount} filtered value records from repository.", filteredValuesWithDetails.Count);
 
-            // Grouping and Mapping logic
             var indicatorDtos = filteredValuesWithDetails
-                // *** REINSTATED .Where() CLAUSE ***
-                // Filter out records where essential navigation properties are null
-                // BEFORE grouping and mapping to prevent NullReferenceExceptions.
                 .Where(v => v.Variable != null &&
                             v.Country != null &&
                             v.Variable.SubChapter != null &&
                             v.Variable.SubChapter.Chapter != null)
+                .Where(v => true)
                 .GroupBy(v => new { v.VariableId, v.CountryId })
                 .Select(group =>
                 {
-                    // Access related entities. Now safer due to the .Where() clause above.
                     var firstValueInGroup = group.First();
                     var variable = firstValueInGroup.Variable!; // Can use ! more confidently now
                     var country = firstValueInGroup.Country!;
                     var subchapter = variable.SubChapter!;
                     var chapter = subchapter.Chapter!;
 
-                    // Handle potential nulls when accessing properties for the DTO (using ?. for extra safety)
                     return new IndicatorDto
                     {
                         VariableCode = variable.Code ?? "N/A",
@@ -111,7 +105,84 @@ public class IndicatorService : IIndicatorService
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while fetching filtered indicators.");
-            throw; // Re-throw
+            throw;
         }
+    }
+    
+    /// <summary>
+    /// Retrieves a single specific indicator time series by variable code and country code.
+    /// </summary>
+    public async Task<IndicatorDto?> GetSpecificIndicatorAsync(
+        string variableCode,
+        string countryCode,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Fetching specific indicator: Variable={VariableCode}, Country={CountryCode}", variableCode, countryCode);
+
+        var filteredValues = await _valueRepository.GetFilteredWithDetailsAsync(
+            countryCode: countryCode,
+            variableCode: variableCode,
+            cancellationToken: cancellationToken);
+
+        if (filteredValues == null)
+        {
+            _logger.LogInformation("Specific indicator repository query returned null: Variable={VariableCode}, Country={CountryCode}", variableCode, countryCode);
+            return null;
+        }
+        if (!filteredValues.Any())
+        {
+            _logger.LogInformation("Specific indicator not found (empty list): Variable={VariableCode}, Country={CountryCode}", variableCode, countryCode);
+            return null;
+        }
+
+        var firstValue = filteredValues.First();
+        var variable = firstValue.Variable;
+        if (variable == null)
+        {
+            _logger.LogWarning("Data integrity issue: Missing Variable entity for VariableCode={VariableCode}, CountryCode={CountryCode}", variableCode, countryCode);
+            return null;
+        }
+
+        var country = firstValue.Country;
+        if (country == null)
+        {
+            _logger.LogWarning("Data integrity issue: Missing Country entity for VariableCode={VariableCode}, CountryCode={CountryCode}", variableCode, countryCode);
+            return null;
+        }
+
+        var subchapter = variable.SubChapter;
+        if (subchapter == null)
+        {
+            _logger.LogWarning("Data integrity issue: Missing Subchapter entity for VariableCode={VariableCode}, CountryCode={CountryCode}", variableCode, countryCode);
+            return null;
+        }
+
+        var chapter = subchapter.Chapter;
+        if (chapter == null)
+        {
+            _logger.LogWarning("Data integrity issue: Missing Chapter entity for VariableCode={VariableCode}, CountryCode={CountryCode}", variableCode, countryCode);
+            return null;
+        }
+
+        var indicatorDto = new IndicatorDto
+        {
+            VariableCode = variable.Code ?? "N/A",
+            VariableName = variable.Name ?? "N/A",
+            Unit = variable.Unit ?? "N/A",
+            SubchapterName = subchapter.Name ?? "N/A",
+            ChapterName = chapter.Name ?? "N/A",
+            CountryCode = country.Code ?? "N/A",
+            CountryName = country.Name ?? "N/A",
+            Values = filteredValues.Select(value => new YearValueDto
+                {
+                    Year = value.Year,
+                    Amount = value.Amount
+                })
+                .OrderBy(yv => yv.Year)
+                .ToList()    
+        };
+
+        _logger.LogInformation("Specific indicator found and mapped: Variable={VariableCode}, Country={CountryCode}", variableCode, countryCode);
+        return indicatorDto;
     }
 }
