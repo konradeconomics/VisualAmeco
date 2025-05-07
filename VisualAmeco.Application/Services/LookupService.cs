@@ -1,6 +1,7 @@
 using Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using VisualAmeco.Application.DTOs;
+using VisualAmeco.Core.Entities;
 using VisualAmeco.Core.Interfaces;
 
 namespace Application.Services;
@@ -10,17 +11,20 @@ public class LookupService : ILookupService
     private readonly ICountryRepository _countryRepository;
     private readonly IChapterRepository _chapterRepository;
     private readonly IVariableRepository _variableRepository;
+    private readonly ISubchapterRepository _subchapterRepository;
     private readonly ILogger<LookupService> _logger;
-    
+
     public LookupService(
         ICountryRepository countryRepository,
         IChapterRepository chapterRepository,
         IVariableRepository variableRepository,
+        ISubchapterRepository subchapterRepository, // <<< ADDED Parameter
         ILogger<LookupService> logger)
     {
         _countryRepository = countryRepository ?? throw new ArgumentNullException(nameof(countryRepository));
         _chapterRepository = chapterRepository ?? throw new ArgumentNullException(nameof(chapterRepository));
         _variableRepository = variableRepository ?? throw new ArgumentNullException(nameof(variableRepository));
+        _subchapterRepository = subchapterRepository ?? throw new ArgumentNullException(nameof(subchapterRepository)); // <<< ADDED Assignment
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
     
@@ -112,6 +116,46 @@ public class LookupService : ILookupService
             _logger.LogError(ex,
                 "An error occurred while fetching variables with filters: ChapterId={ChapterId}, SubchapterId={SubchapterId}",
                 chapterId, subchapterId);
+            throw;
+        }
+    }
+    
+    /// <summary>
+    /// Retrieves a list of subchapters, optionally filtered by chapter ID.
+    /// </summary>
+    public async Task<IEnumerable<SubchapterDto>> GetSubchaptersAsync(int? chapterId = null)
+    {
+        _logger.LogInformation("Fetching subchapters with filter: ChapterId={ChapterId}", chapterId?.ToString() ?? "N/A");
+        try
+        {
+            IEnumerable<Subchapter> subchapters;
+            if (chapterId.HasValue)
+            {
+                // Call specific repo method if chapterId is provided
+                subchapters = await _subchapterRepository.GetByChapterAsync(chapterId.Value);
+            }
+            else
+            {
+                // Call general repo method if no filter
+                subchapters = await _subchapterRepository.GetAllAsync();
+            }
+
+            // Map Entity to DTO
+            var subchapterDtos = subchapters
+                .Select(s => new SubchapterDto
+                {
+                    Id = s.Id,
+                    Name = s.Name ?? "N/A",
+                    ChapterId = s.ChapterId // Include ChapterId in DTO
+                })
+                .ToList(); // Ordering is likely handled by repo methods
+
+            _logger.LogInformation("Returning {Count} subchapters.", subchapterDtos.Count);
+            return subchapterDtos;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "An error occurred while fetching subchapters with filter: ChapterId={ChapterId}", chapterId?.ToString() ?? "N/A");
             throw;
         }
     }

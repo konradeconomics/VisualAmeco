@@ -23,4 +23,11 @@ public interface ILookupService
     /// <param name="subchapterId">Optional ID of the subchapter to filter by.</param>
     /// <returns>An asynchronous task returning an enumerable collection of VariableDto objects.</returns>
     Task<IEnumerable<VariableDto>> GetVariablesAsync(int? chapterId = null, int? subchapterId = null);
+    
+    /// <summary>
+    /// Retrieves a list of subchapters, optionally filtered by chapter ID.
+    /// </summary>
+    /// <param name="chapterId">Optional ID of the chapter to filter subchapters by.</param>
+    /// <returns>An asynchronous task returning an enumerable collection of SubchapterDto objects.</returns>
+    Task<IEnumerable<SubchapterDto>> GetSubchaptersAsync(int? chapterId = null);
 }
