@@ -20,4 +20,22 @@ public class SubchapterRepository : ISubchapterRepository
     
     public async Task AddAsync(Subchapter subchapter)
         => await _context.Subchapters.AddAsync(subchapter);
+    
+    public async Task<IEnumerable<Subchapter>> GetAllAsync()
+    {
+        return await _context.Subchapters
+            .AsNoTracking()
+            .OrderBy(s => s.ChapterId) // Order by Chapter then Name
+            .ThenBy(s => s.Name)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Subchapter>> GetByChapterAsync(int chapterId)
+    {
+        return await _context.Subchapters
+            .Where(s => s.ChapterId == chapterId)
+            .OrderBy(s => s.Name)
+            .AsNoTracking()
+            .ToListAsync();
+    }
 }
