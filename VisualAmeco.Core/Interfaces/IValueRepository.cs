@@ -34,4 +34,23 @@ public interface IValueRepository
     /// <param name="cancellationToken">Optional token to cancel the asynchronous operation.</param>
     /// <returns>An asynchronous task that returns a list of Value entities with related data included.</returns>
     Task<List<Value>> GetAllWithDetailsAsync(CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Gets Value entities based on specified filters, including related details.
+    /// Implementations should use eager loading (Include/ThenInclude).
+    /// </summary>
+    /// <param name="countryCode">Optional country code to filter by.</param>
+    /// <param name="variableCode">Optional variable code to filter by.</param>
+    /// <param name="chapterName">Optional chapter name to filter by.</param>
+    /// <param name="subchapterName">Optional subchapter name to filter by.</param>
+    /// <param name="years">Optional list of specific years to include.</param>
+    /// <param name="cancellationToken">Optional token to cancel the operation.</param>
+    /// <returns>A list of filtered Value entities with related data included.</returns>
+    Task<List<Value>> GetFilteredWithDetailsAsync(
+        string? countryCode = null,
+        string? variableCode = null,
+        string? chapterName = null,
+        string? subchapterName = null,
+        List<int>? years = null,
+        CancellationToken cancellationToken = default);
 }

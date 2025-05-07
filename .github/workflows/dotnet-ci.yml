@@ -1,0 +1,49 @@
+# .github/workflows/dotnet-ci.yml
+# Basic Continuous Integration workflow for the .NET solution
+
+name: .NET CI Build and Test # Name of the workflow displayed on GitHub Actions tab
+
+# Controls when the workflow will run
+on:
+  push:
+    branches: [ develop ] # Trigger on pushes to the develop branch
+  pull_request:
+    branches: [ develop, main ] # Trigger on pull requests targeting develop or main
+  workflow_dispatch:
+
+jobs:
+  # Define a job named 'build-and-test'
+  build-and-test:
+    # Specify the runner environment (latest Ubuntu is common and cost-effective)
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4 # Use the standard checkout action
+
+      # Step 2: Setup .NET SDK environment
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          # Specify the .NET version matching your project's target framework
+          # Adjust this if you are using a different version (e.g., 8.0.x)
+          dotnet-version: '9.0.x'
+
+      # Step 3: Restore NuGet dependencies for the solution
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # Step 4: Build the entire solution in Release configuration
+      - name: Build solution
+        # Add --no-restore because dependencies were restored in the previous step
+        run: dotnet build --configuration Release --no-restore
+
+      # Step 5: Run Unit Tests
+      - name: Run tests
+        # Runs tests in projects configured for testing
+        # --no-build assumes the build step already compiled everything
+        # --configuration Release ensures tests run against the release build
+        # --verbosity normal provides reasonable output
+        # Optional: Add --logger "trx;LogFileName=test-results.trx" to generate results file
+        run: dotnet test --configuration Release --no-build --verbosity normal

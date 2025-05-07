@@ -19,4 +19,11 @@ public class ChapterRepository : IChapterRepository
 
     public async Task AddAsync(Chapter chapter)
         => await _context.Chapters.AddAsync(chapter);
+    
+    public async Task<IEnumerable<Chapter>> GetAllAsync()
+    {
+        return await _context.Chapters
+            .AsNoTracking()
+            .ToListAsync();
+    }
 }
