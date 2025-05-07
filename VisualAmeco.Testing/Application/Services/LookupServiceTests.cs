@@ -13,22 +13,40 @@ public class LookupServiceTests
 {
     private Mock<ICountryRepository> _mockCountryRepo = null!;
     private Mock<IChapterRepository> _mockChapterRepo = null!;
+    private Mock<IVariableRepository> _mockVariableRepo = null!;
 
     private ILogger<LookupService> _logger = null!;
     private LookupService _service = null!;
+    
+    private Chapter _chapter1 = null!;
+    private Subchapter _subchapter1 = null!;
+    private Subchapter _subchapter2 = null!;
+    private Variable _variable1 = null!;
+    private Variable _variable2 = null!;
+    private Variable _variable3 = null!;
+
 
     [SetUp]
     public void Setup()
     {
         _mockCountryRepo = new Mock<ICountryRepository>();
         _mockChapterRepo = new Mock<IChapterRepository>();
+        _mockVariableRepo = new Mock<IVariableRepository>();
         _logger = NullLogger<LookupService>.Instance;
 
         _service = new LookupService(
             _mockCountryRepo.Object,
             _mockChapterRepo.Object,
+            _mockVariableRepo.Object,
             _logger
         );
+        
+        _chapter1 = new Chapter { Id = 10, Name = "Chapter One" };
+        _subchapter1 = new Subchapter { Id = 101, Name = "Subchapter 1.1", ChapterId = 10, Chapter = _chapter1 };
+        _subchapter2 = new Subchapter { Id = 102, Name = "Subchapter 1.2", ChapterId = 10, Chapter = _chapter1 };
+        _variable1 = new Variable { Id = 1010, Code = "VAR1", Name = "Variable One", Unit = "U1", SubChapterId = 101, SubChapter = _subchapter1 };
+        _variable2 = new Variable { Id = 1011, Code = "VAR2", Name = "Variable Two", Unit = "U2", SubChapterId = 101, SubChapter = _subchapter1 };
+        _variable3 = new Variable { Id = 1012, Code = "VAR3", Name = "Variable Three", Unit = "U3", SubChapterId = 102, SubChapter = _subchapter2 };
     }
 
     /// <summary>
@@ -157,5 +175,159 @@ public class LookupServiceTests
             Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.GetAllChaptersAsync());
         Assert.AreEqual(testException.Message, thrown?.Message);
         _mockChapterRepo.Verify(r => r.GetAllAsync(), Times.Once);
+    }
+    
+    /// <summary>
+    /// Tests GetVariablesAsync with no filters returns all variables mapped to DTOs.
+    /// </summary>
+    [Test]
+    public async Task GetVariablesAsync_NoFilters_ReturnsAllVariableDtos()
+    {
+        // Arrange
+        var mockVariables = new List<Variable> { _variable1, _variable2, _variable3 };
+        _mockVariableRepo.Setup(r => r.GetFilteredAsync(null, null)).ReturnsAsync(mockVariables);
+
+        // Act
+        var result = await _service.GetVariablesAsync();
+        var resultList = result.ToList();
+
+        // Assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(3, resultList.Count, "Should return all 3 variables.");
+        Assert.IsTrue(resultList.Any(v => v.Code == "VAR1" && v.SubchapterName == "Subchapter 1.1"));
+        Assert.IsTrue(resultList.Any(v => v.Code == "VAR2" && v.SubchapterName == "Subchapter 1.1"));
+        Assert.IsTrue(resultList.Any(v => v.Code == "VAR3" && v.SubchapterName == "Subchapter 1.2"));
+        _mockVariableRepo.Verify(r => r.GetFilteredAsync(null, null), Times.Once); // Verify repo interaction
+    }
+
+    /// <summary>
+    /// Tests GetVariablesAsync filtering by chapterId correctly calls repo and maps results.
+    /// </summary>
+    [Test]
+    public async Task GetVariablesAsync_FilterByChapterId_CallsRepoAndReturnsDtos()
+    {
+        // Arrange
+        int filterChapterId = 10;
+        // Assume repo returns all variables for this chapter
+        var mockVariables = new List<Variable> { _variable1, _variable2, _variable3 };
+        _mockVariableRepo.Setup(r => r.GetFilteredAsync(filterChapterId, null)).ReturnsAsync(mockVariables);
+
+        // Act
+        var result = await _service.GetVariablesAsync(chapterId: filterChapterId);
+        var resultList = result.ToList();
+
+        // Assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(3, resultList.Count); // All variables belong to chapter 10 in setup
+        Assert.IsTrue(resultList.All(v => v.Code.StartsWith("VAR")));
+        _mockVariableRepo.Verify(r => r.GetFilteredAsync(filterChapterId, null), Times.Once); // Verify repo called with correct filter
+    }
+
+    /// <summary>
+    /// Tests GetVariablesAsync filtering by subchapterId correctly calls repo and maps results.
+    /// </summary>
+    [Test]
+    public async Task GetVariablesAsync_FilterBySubchapterId_CallsRepoAndReturnsDtos()
+    {
+        // Arrange
+        int filterSubchapterId = 101; // Only VAR1 and VAR2 belong to this one
+        var mockVariables = new List<Variable> { _variable1, _variable2 }; // Repo returns only matching vars
+        _mockVariableRepo.Setup(r => r.GetFilteredAsync(null, filterSubchapterId)).ReturnsAsync(mockVariables);
+
+        // Act
+        var result = await _service.GetVariablesAsync(subchapterId: filterSubchapterId);
+        var resultList = result.ToList();
+
+        // Assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(2, resultList.Count, "Should only return variables for subchapter 101.");
+        Assert.IsTrue(resultList.Any(v => v.Code == "VAR1"));
+        Assert.IsTrue(resultList.Any(v => v.Code == "VAR2"));
+        Assert.IsFalse(resultList.Any(v => v.Code == "VAR3")); // Verify VAR3 is not included
+        _mockVariableRepo.Verify(r => r.GetFilteredAsync(null, filterSubchapterId), Times.Once); // Verify repo called with correct filter
+    }
+
+    /// <summary>
+    /// Tests GetVariablesAsync filtering by both chapterId and subchapterId.
+    /// </summary>
+    [Test]
+    public async Task GetVariablesAsync_FilterByChapterAndSubchapterId_CallsRepoAndReturnsDtos()
+    {
+        // Arrange
+        int filterChapterId = 10;
+        int filterSubchapterId = 102; // Only VAR3 belongs to this one
+        var mockVariables = new List<Variable> { _variable3 }; // Repo returns only matching var
+        _mockVariableRepo.Setup(r => r.GetFilteredAsync(filterChapterId, filterSubchapterId)).ReturnsAsync(mockVariables);
+
+        // Act
+        var result = await _service.GetVariablesAsync(chapterId: filterChapterId, subchapterId: filterSubchapterId);
+        var resultList = result.ToList();
+
+        // Assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(1, resultList.Count, "Should only return variable for subchapter 102.");
+        Assert.AreEqual("VAR3", resultList[0].Code);
+        _mockVariableRepo.Verify(r => r.GetFilteredAsync(filterChapterId, filterSubchapterId), Times.Once); // Verify repo called with correct filters
+    }
+
+    /// <summary>
+    /// Tests GetVariablesAsync returns empty list when repository returns empty.
+    /// </summary>
+    [Test]
+    public async Task GetVariablesAsync_WhenRepoReturnsEmpty_ReturnsEmptyList()
+    {
+        // Arrange
+        var mockVariables = new List<Variable>();
+        _mockVariableRepo.Setup(r => r.GetFilteredAsync(It.IsAny<int?>(), It.IsAny<int?>())).ReturnsAsync(mockVariables);
+
+        // Act
+        var result = await _service.GetVariablesAsync(); // Call without filters
+
+        // Assert
+        Assert.IsNotNull(result);
+        Assert.IsFalse(result.Any());
+        _mockVariableRepo.Verify(r => r.GetFilteredAsync(null, null), Times.Once); // Verify repo called
+    }
+
+    /// <summary>
+    /// Tests GetVariablesAsync propagates exceptions from the repository.
+    /// </summary>
+    [Test]
+    public void GetVariablesAsync_WhenRepoThrows_ThrowsException()
+    {
+        // Arrange
+        var testException = new InvalidOperationException("DB Error Variables");
+        _mockVariableRepo.Setup(r => r.GetFilteredAsync(It.IsAny<int?>(), It.IsAny<int?>())).ThrowsAsync(testException);
+
+        // Act & Assert
+        var thrown = Assert.ThrowsAsync<InvalidOperationException>(async () => await _service.GetVariablesAsync());
+        Assert.AreEqual(testException.Message, thrown?.Message);
+        _mockVariableRepo.Verify(r => r.GetFilteredAsync(null, null), Times.Once);
+    }
+
+    /// <summary>
+    /// Tests mapping handles null Subchapter navigation property gracefully.
+    /// </summary>
+    [Test]
+    public async Task GetVariablesAsync_WhenVariableHasNullSubchapter_MapsSubchapterNameToNA()
+    {
+        // Arrange
+        var variableWithNullSub = new Variable
+        {
+            Id = 999, Code = "VAR_NULL", Name = "Var Null Sub", Unit = "U", SubChapterId = 99, SubChapter = null!
+        }; // Simulate missing include
+        var mockVariables = new List<Variable> { variableWithNullSub };
+        _mockVariableRepo.Setup(r => r.GetFilteredAsync(null, null)).ReturnsAsync(mockVariables);
+
+        // Act
+        var result = await _service.GetVariablesAsync();
+        var resultList = result.ToList();
+
+        // Assert
+        Assert.AreEqual(1, resultList.Count);
+        Assert.AreEqual("VAR_NULL", resultList[0].Code);
+        Assert.AreEqual("N/A", resultList[0].SubchapterName,
+            "SubchapterName should default to N/A if Subchapter entity is null.");
+        _mockVariableRepo.Verify(r => r.GetFilteredAsync(null, null), Times.Once);
     }
 }
