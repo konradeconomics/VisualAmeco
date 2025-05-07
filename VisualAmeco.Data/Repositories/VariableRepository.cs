@@ -21,4 +21,23 @@ public class VariableRepository : IVariableRepository
     
     public async Task AddAsync(Variable variable)
         => await _context.Variables.AddAsync(variable);
+    
+    public async Task<IEnumerable<Variable>> GetFilteredAsync(int? chapterId = null, int? subchapterId = null)
+    {
+        var query = _context.Variables
+            .Include(v => v.SubChapter)
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (subchapterId.HasValue)
+        {
+            query = query.Where(v => v.SubChapterId == subchapterId.Value);
+        }
+        else if (chapterId.HasValue)
+        {
+            query = query.Where(v => v.SubChapter != null && v.SubChapter.ChapterId == chapterId.Value);
+        }
+
+        return await query.OrderBy(v => v.Name).ToListAsync();
+    }
 }
