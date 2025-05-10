@@ -48,7 +48,8 @@ public class IndicatorsControllerTests
             CountryName = $"Country {countryCode}",
             ChapterName = "Chapter",
             SubchapterName = "Sub",
-            Unit = "Units",
+            UnitCode = "0",
+            UnitDescription = "Unit",
             Values = new List<YearValueDto> { new YearValueDto { Year = 2020, Amount = 100m } }
         };
     }

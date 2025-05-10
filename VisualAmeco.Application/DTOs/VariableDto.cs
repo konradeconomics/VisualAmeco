@@ -18,10 +18,16 @@ public class VariableDto
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
+    /// The code of the unit of measurement for the variable.
+    /// </summary>
+    /// <example>0</example>
+    public string UnitCode { get; set; } = string.Empty;    
+    
+    /// <summary>
     /// The unit of measurement for the variable.
     /// </summary>
-    /// <example>1000 persons</example>
-    public string Unit { get; set; } = string.Empty;
+    /// <example>Mrd ECU/EUR</example>
+    public string UnitDescription { get; set; } = string.Empty;
 
     /// <summary>
     /// The ID of the subchapter this variable belongs to.
