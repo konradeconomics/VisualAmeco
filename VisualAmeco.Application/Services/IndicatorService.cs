@@ -79,7 +79,8 @@ public class IndicatorService : IIndicatorService
                     {
                         VariableCode = variable.Code ?? "N/A",
                         VariableName = variable.Name ?? "N/A",
-                        Unit = variable.Unit ?? "N/A",
+                        UnitCode = variable.UnitCode?? "N/A",
+                        UnitDescription = variable.UnitDescription ?? "N/A",
                         SubchapterName = subchapter.Name ?? "N/A",
                         ChapterName = chapter.Name ?? "N/A",
                         CountryCode = country.Code ?? "N/A",
@@ -168,7 +169,8 @@ public class IndicatorService : IIndicatorService
         {
             VariableCode = variable.Code ?? "N/A",
             VariableName = variable.Name ?? "N/A",
-            Unit = variable.Unit ?? "N/A",
+            UnitCode = variable.UnitCode ?? "N/A",
+            UnitDescription = variable.UnitDescription ?? "N/A",
             SubchapterName = subchapter.Name ?? "N/A",
             ChapterName = chapter.Name ?? "N/A",
             CountryCode = country.Code ?? "N/A",

@@ -18,11 +18,18 @@ public class IndicatorDto
     /// <example>Total population (National accounts)</example>
     public string VariableName { get; set; } = string.Empty;
 
+    // public string Unit { get; set; } = string.Empty; // Old property
     /// <summary>
-    /// The unit of measurement for the variable.
+    /// The numeric code for the unit of measurement.
+    /// </summary>
+    /// <example>0</example>
+    public string UnitCode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The descriptive string for the unit of measurement.
     /// </summary>
     /// <example>1000 persons</example>
-    public string Unit { get; set; } = string.Empty;
+    public string UnitDescription { get; set; } = string.Empty;
 
     /// <summary>
     /// The name/code of the subchapter the variable belongs to.
