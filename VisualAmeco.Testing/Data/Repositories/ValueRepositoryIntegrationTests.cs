@@ -51,8 +51,8 @@ public class ValueRepositoryIntegrationTests
     {
         var chapter1 = new Chapter { Id = SeedChapterId, Name = SeedChapterName };
         var subchapter1 = new Subchapter { Id = SeedSubchapterId, Name = SeedSubchapterName, ChapterId = SeedChapterId };
-        var variable1 = new Variable { Id = SeedVariableId1, Code = SeedVariableCode1, Name = "Seed Var 1", Unit = "U1", SubChapterId = SeedSubchapterId };
-        var variable2 = new Variable { Id = SeedVariableId2, Code = SeedVariableCode2, Name = "Seed Var 2", Unit = "U2", SubChapterId = SeedSubchapterId };
+        var variable1 = new Variable { Id = SeedVariableId1, Code = SeedVariableCode1, Name = "Seed Var 1", UnitCode = "U1", UnitDescription = "Test Description", SubChapterId = SeedSubchapterId };
+        var variable2 = new Variable { Id = SeedVariableId2, Code = SeedVariableCode2, Name = "Seed Var 2", UnitCode = "U2", UnitDescription = "Test Description", SubChapterId = SeedSubchapterId };
         var country1 = new Country { Id = SeedCountryId1, Code = SeedCountryCode1, Name = "Seed Country 1" };
         var country2 = new Country { Id = SeedCountryId2, Code = SeedCountryCode2, Name = "Seed Country 2" };
 

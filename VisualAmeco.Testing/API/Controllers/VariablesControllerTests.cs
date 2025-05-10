@@ -42,7 +42,8 @@ public class VariablesControllerTests
             {
                 Code = $"VAR{i}",
                 Name = $"Variable {i}",
-                Unit = $"U{i}",
+                UnitCode = $"{i}",
+                UnitDescription = $"Unit {i}",
                 SubchapterId = 100 + i,
                 SubchapterName = $"Subchapter 1.{i}"
             });

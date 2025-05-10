@@ -51,9 +51,9 @@ public class LookupServiceTests
             _subchapter1_2 = new Subchapter { Id = 102, Name = "Subchapter 1.2", ChapterId = 10, Chapter = _chapter1 };
             _subchapter2_1 = new Subchapter { Id = 201, Name = "Subchapter 2.1", ChapterId = 20, Chapter = _chapter2 };
 
-            _variable1 = new Variable { Id = 1010, Code = "VAR1", Name = "Variable One", Unit = "U1", SubChapterId = 101, SubChapter = _subchapter1_1 };
-            _variable2 = new Variable { Id = 1011, Code = "VAR2", Name = "Variable Two", Unit = "U2", SubChapterId = 101, SubChapter = _subchapter1_1 };
-            _variable3 = new Variable { Id = 1012, Code = "VAR3", Name = "Variable Three", Unit = "U3", SubChapterId = 102, SubChapter = _subchapter1_2 }; // Linked to subchapter 1.2
+            _variable1 = new Variable { Id = 1010, Code = "VAR1", Name = "Variable One", UnitCode = "U1", UnitDescription = "Test Unit Description", SubChapterId = 101, SubChapter = _subchapter1_1 };
+            _variable2 = new Variable { Id = 1011, Code = "VAR2", Name = "Variable Two", UnitCode = "U2", UnitDescription = "Test Unit Description", SubChapterId = 101, SubChapter = _subchapter1_1 };
+            _variable3 = new Variable { Id = 1012, Code = "VAR3", Name = "Variable Three", UnitCode = "U3", UnitDescription = "Test Unit Description", SubChapterId = 102, SubChapter = _subchapter1_2 }; // Linked to subchapter 1.2
         }
 
     /// <summary>
@@ -321,7 +321,7 @@ public class LookupServiceTests
         // Arrange
         var variableWithNullSub = new Variable
         {
-            Id = 999, Code = "VAR_NULL", Name = "Var Null Sub", Unit = "U", SubChapterId = 99, SubChapter = null!
+            Id = 999, Code = "VAR_NULL", Name = "Var Null Sub", UnitCode = "U", UnitDescription = "Unit",SubChapterId = 99, SubChapter = null!
         }; // Simulate missing include
         var mockVariables = new List<Variable> { variableWithNullSub };
         _mockVariableRepo.Setup(r => r.GetFilteredAsync(null, null)).ReturnsAsync(mockVariables);

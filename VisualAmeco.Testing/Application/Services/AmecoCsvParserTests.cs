@@ -23,10 +23,9 @@ public class AmecoCsvParserTests{
 
     // Common test data elements
     private readonly string[] _validHeader = {
-        // Required columns
-        "CODE", "SUB-CHAPTER", "TITLE", "UNIT", "CNTRY", "COUNTRY",
-        "SERIES", "TRN", "EXTRA_DATA",
-        "2020", "2021", "2022"
+        "CODE", "SUB-CHAPTER", "TITLE", "UNIT_CODE", "UNIT_DESCRIPTION",
+        "CNTRY", "COUNTRY", "TRN", "AGG", "REF",
+        "2020", "2021"
     };
 
     [SetUp]
