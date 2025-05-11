@@ -20,8 +20,8 @@ namespace VisualAmeco.Seeder
         static async Task Main(string[] args)
         {
             Console.WriteLine("--- Seeder Main Started (Console Output) ---");
-
-            var configuration = new ConfigurationBuilder()
+            
+            var initialConfiguration = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production"}.json", optional: true)
@@ -29,7 +29,7 @@ namespace VisualAmeco.Seeder
                 .Build();
 
             Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(configuration)
+                .ReadFrom.Configuration(initialConfiguration)
                 .Enrich.FromLogContext()
                 .CreateLogger();
 
@@ -39,11 +39,18 @@ namespace VisualAmeco.Seeder
 
                 // --- Setup Host Builder ---
                 var host = Host.CreateDefaultBuilder(args)
-                    .UseSerilog()
-                    .ConfigureAppConfiguration((context, config) =>
+                    .ConfigureAppConfiguration((hostingContext, config) =>
                     {
-                        
+                        config.Sources.Clear();
+                        config.SetBasePath(AppContext.BaseDirectory);
+                        config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                        var environmentName = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
+                                              ?? hostingContext.HostingEnvironment.EnvironmentName // This should be available if the lambda signature is (HostBuilderContext hostingContext, ...)
+                                              ?? "Production";
+                        config.AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: true);
+                        config.AddEnvironmentVariables();
                     })
+                    .UseSerilog()
                     .ConfigureServices((context, services) =>
                     {
                         var connectionString = context.Configuration.GetConnectionString("DefaultConnection");
