@@ -24,7 +24,6 @@ public interface IValueRepository
     /// <param name="value">The Value entity to add.</param>
     Task AddAsync(Value value);
 
-    // --- NEW METHOD ADDED ---
     /// <summary>
     /// Gets all Value entities including related details needed for indicator display.
     /// Implementations should typically use eager loading (e.g., EF Core's Include/ThenInclude)

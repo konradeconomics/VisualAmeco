@@ -304,7 +304,6 @@ public class AmecoCsvParserTests{
         SetupFileReaderSuccess(filePath, header, rows);
 
         // Setup mapper: Success for row1, Fail for row2
-        // Using It.IsAny for non-row arguments for simplicity in this setup
         _mockRowMapper.Setup(m => m.MapAsync(
                             It.Is<string[]>(r => r.SequenceEqual(row1)),
                             header,
@@ -321,8 +320,6 @@ public class AmecoCsvParserTests{
                       .ReturnsAsync(MapResult<MappedAmecoRow>.Fail("Test mapping failed"));
 
         // Act
-        // Parser should read file, process header, map row1 (success), map row2 (fail),
-        // save mappedRow1, skip saving for row2, finish file, return true.
         var result = await _parser.ParseAndSaveAsync(filePaths);
 
         // Assert
@@ -378,8 +375,6 @@ public class AmecoCsvParserTests{
         
 
         // Act
-        // Parser should: Read file, Process Header, Map row1(OK), Save row1(Throws), Catch/Log (row level),
-        // Map row2(OK), Save row2(OK), Finish File loop, Increment totalFilesProcessed, Return true.
         var result = await _parser.ParseAndSaveAsync(filePaths);
 
         // Assert
@@ -389,8 +384,8 @@ public class AmecoCsvParserTests{
         _mockFileReader.Verify(r => r.ReadSingleFileAsync(filePath), Times.Once);
         _mockRowMapper.Verify(m => m.MapAsync(It.IsAny<string[]>(), It.IsAny<string[]>(), It.IsAny<Dictionary<string, int>>(), It.IsAny<List<string>>(), It.IsAny<string>()), Times.Exactly(2)); // Mapper called for both rows
         // Verify saver was ATTEMPTED for both rows
-        _mockEntitySaver.Verify(s => s.SaveAsync(mappedRow1), Times.Once); // Called, but threw exception (caught by parser)
-        _mockEntitySaver.Verify(s => s.SaveAsync(mappedRow2), Times.Once); // Called and succeeded (mock didn't throw)
+        _mockEntitySaver.Verify(s => s.SaveAsync(mappedRow1), Times.Once);
+        _mockEntitySaver.Verify(s => s.SaveAsync(mappedRow2), Times.Once);
     }
     
     /// <summary>
@@ -450,7 +445,7 @@ public class AmecoCsvParserTests{
                       .ReturnsAsync(MapResult<MappedAmecoRow>.Success(mappedRow3_1));
         _mockRowMapper.Setup(m => m.MapAsync(It.Is<string[]>(r => r.SequenceEqual(row3_2)), header3, It.IsAny<Dictionary<string, int>>(), It.IsAny<List<string>>(), chapterName3))
                       .ReturnsAsync(MapResult<MappedAmecoRow>.Fail("Mapper failed for row 3_2"));
-        // Saver (only expect calls for successfully mapped rows)
+        // Saver
         _mockEntitySaver.Setup(s => s.SaveAsync(mappedRow1_1)).Returns(Task.CompletedTask);
         _mockEntitySaver.Setup(s => s.SaveAsync(mappedRow3_1)).Returns(Task.CompletedTask);
 
@@ -502,11 +497,11 @@ public class AmecoCsvParserTests{
         };
 
         var filePaths = new List<string>();
-        var header = _validHeader; // Use a valid header for all
+        var header = _validHeader;
         // Adjust row to match _validHeader length
         var sampleRow = new[] { "CODE", "Sub", "Title", "Unit", "C", "Country", "Extra", "100", "110" };
         var rows = new List<string[]> { sampleRow };
-        var sampleMappedRow = CreateMappedRow("CODE"); // Content doesn't matter much here
+        var sampleMappedRow = CreateMappedRow("CODE");
 
         // Create files and setup mocks for each filename
         foreach (var kvp in filesToTest)
@@ -515,11 +510,10 @@ public class AmecoCsvParserTests{
             var filePath = Path.Combine(_tempDirectory, fileName);
             filePaths.Add(filePath);
 
-            File.WriteAllText(filePath, string.Empty); // Create placeholder file
-            SetupFileReaderSuccess(filePath, header, rows); // Setup reader for this file
+            File.WriteAllText(filePath, string.Empty);
+            SetupFileReaderSuccess(filePath, header, rows);
 
             // Setup mapper ONCE to succeed for the sampleRow REGARDLESS of chapter name input.
-            // We will VERIFY the correct chapter name was passed later.
             _mockRowMapper.Setup(m => m.MapAsync(
                                 It.Is<string[]>(r => r.SequenceEqual(sampleRow)),
                                 header,
@@ -544,7 +538,6 @@ public class AmecoCsvParserTests{
                             sampleRow, header, It.IsAny<Dictionary<string, int>>(), It.IsAny<List<string>>(), It.IsAny<string>()
                             ), Times.Exactly(filesToTest.Count), "Mapper should be called once per file.");
 
-        // *** FIX: Verify specific chapter name counts individually AFTER the loop ***
         _mockRowMapper.Verify(m => m.MapAsync(
                             sampleRow, header, It.IsAny<Dictionary<string, int>>(), It.IsAny<List<string>>(),
                             chapter10Name // "Balances..."
@@ -552,12 +545,12 @@ public class AmecoCsvParserTests{
 
         _mockRowMapper.Verify(m => m.MapAsync(
                             sampleRow, header, It.IsAny<Dictionary<string, int>>(), It.IsAny<List<string>>(),
-                            unknownChapter99 // "Unknown Chapter (99)"
+                            unknownChapter99
                             ), Times.Once, $"Expected chapter '{unknownChapter99}' called once.");
 
         _mockRowMapper.Verify(m => m.MapAsync(
                             sampleRow, header, It.IsAny<Dictionary<string, int>>(), It.IsAny<List<string>>(),
-                            unknownChapterDefault // "Unknown Chapter"
+                            unknownChapterDefault
                             ), Times.Exactly(3), $"Expected chapter '{unknownChapterDefault}' called three times.");
 
 
