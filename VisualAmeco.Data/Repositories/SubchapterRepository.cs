@@ -25,7 +25,7 @@ public class SubchapterRepository : ISubchapterRepository
     {
         return await _context.Subchapters
             .AsNoTracking()
-            .OrderBy(s => s.ChapterId) // Order by Chapter then Name
+            .OrderBy(s => s.ChapterId)
             .ThenBy(s => s.Name)
             .ToListAsync();
     }

@@ -128,7 +128,7 @@ public class CsvRowMapperTests
             { "TRN", 5}, {"AGG", 6}, {"REF", 7},
             { "CNTRY", 8 }, { "COUNTRY", 9 }
         };
-        var yearCols = new List<string> { "2020", "2021" }; // Expecting both years
+        var yearCols = new List<string> { "2020", "2021" };
         var chapterNameContext = "Gross Domestic Product";
 
         // Act

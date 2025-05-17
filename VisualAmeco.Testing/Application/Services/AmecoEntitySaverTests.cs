@@ -37,7 +37,7 @@ public class AmecoEntitySaverTests
     private const int TestYear2021 = 2021;
     private const decimal TestAmount2021 = 678.90m;
 
-    // Assumed Entity IDs (use appropriate type like int or Guid)
+    // Assumed Entity IDs
     private const int ChapterId = 1;
     private const int SubchapterId = 11;
     private const int VariableId = 111;
@@ -66,7 +66,6 @@ public class AmecoEntitySaverTests
             _mockUnitOfWork.Object
             , _mockLogger.Object
         );
-        // --- Default Setup for Mocks (can be overridden in specific tests) ---
 
         // Default: Assume AddAsync completes successfully for all repos
         _mockChapterRepo.Setup(r => r.AddAsync(It.IsAny<Chapter>())).Returns(Task.CompletedTask);
@@ -146,7 +145,7 @@ public class AmecoEntitySaverTests
 
         // Verify Gets were called
         _mockChapterRepo.Verify(r => r.GetByNameAsync(TestChapterName), Times.Once);
-        // Verify Subchapter Get was called (might be with ID 0 if chapter was new)
+        // Verify Subchapter Get was called
         _mockSubchapterRepo.Verify(r => r.GetByNameAsync(TestSubchapterName, It.IsAny<int>()), Times.Once);
         _mockVariableRepo.Verify(r => r.GetByCodeAsync(TestVariableCode), Times.Once);
         _mockCountryRepo.Verify(r => r.GetByCodeAsync(TestCountryCode), Times.Once);
@@ -206,7 +205,6 @@ public class AmecoEntitySaverTests
         _mockVariableRepo.Verify(r => r.GetByCodeAsync(TestVariableCode), Times.Once);
         _mockCountryRepo.Verify(r => r.GetByCodeAsync(TestCountryCode), Times.Once);
 
-        // *** FIX: Verify Parent AddAsync calls were NOT made ***
         _mockChapterRepo.Verify(r => r.AddAsync(It.IsAny<Chapter>()), Times.Never);
         _mockSubchapterRepo.Verify(r => r.AddAsync(It.IsAny<Subchapter>()), Times.Never);
         _mockVariableRepo.Verify(r => r.AddAsync(It.IsAny<Variable>()), Times.Never);
@@ -237,7 +235,7 @@ public class AmecoEntitySaverTests
     {
         // Arrange
         var mappedRow = CreateSampleMappedRow();
-        mappedRow.Values.Clear(); // No year values
+        mappedRow.Values.Clear();
 
         // Setup as if entities are new
         _mockChapterRepo.Setup(r => r.GetByNameAsync(TestChapterName)).ReturnsAsync((Chapter?)null);
