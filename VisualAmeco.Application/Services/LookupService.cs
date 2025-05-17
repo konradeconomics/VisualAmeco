@@ -102,7 +102,8 @@ public class LookupService : ILookupService
                 {
                     Code = v.Code ?? "N/A",
                     Name = v.Name ?? "N/A",
-                    Unit = v.Unit ?? "N/A",
+                    UnitCode = v.UnitCode ?? "N/A",
+                    UnitDescription = v.UnitDescription ?? "N/A",
                     SubchapterId = v.SubChapterId,
                     SubchapterName = v.SubChapter?.Name ?? "N/A"
                 })
@@ -131,12 +132,10 @@ public class LookupService : ILookupService
             IEnumerable<Subchapter> subchapters;
             if (chapterId.HasValue)
             {
-                // Call specific repo method if chapterId is provided
                 subchapters = await _subchapterRepository.GetByChapterAsync(chapterId.Value);
             }
             else
             {
-                // Call general repo method if no filter
                 subchapters = await _subchapterRepository.GetAllAsync();
             }
 
@@ -146,9 +145,9 @@ public class LookupService : ILookupService
                 {
                     Id = s.Id,
                     Name = s.Name ?? "N/A",
-                    ChapterId = s.ChapterId // Include ChapterId in DTO
+                    ChapterId = s.ChapterId
                 })
-                .ToList(); // Ordering is likely handled by repo methods
+                .ToList();
 
             _logger.LogInformation("Returning {Count} subchapters.", subchapterDtos.Count);
             return subchapterDtos;

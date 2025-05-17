@@ -16,7 +16,6 @@ public class IndicatorsController : ControllerBase
     private readonly IIndicatorService _indicatorService;
     private readonly ILogger<IndicatorsController> _logger;
 
-    // Inject the IIndicatorService
     public IndicatorsController(IIndicatorService indicatorService, ILogger<IndicatorsController> logger)
     {
         _indicatorService = indicatorService ?? throw new ArgumentNullException(nameof(indicatorService));
@@ -38,31 +37,27 @@ public class IndicatorsController : ControllerBase
     [HttpGet] // Handles GET requests to /api/indicators
     [ProducesResponseType(typeof(IEnumerable<IndicatorDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    // *** UPDATED Method Signature to accept filters from query string ***
     public async Task<ActionResult<IEnumerable<IndicatorDto>>> GetIndicators(
         [FromQuery] string? countryCode = null,
         [FromQuery] string? variableCode = null,
         [FromQuery] string? chapterName = null,
         [FromQuery] string? subchapterName = null,
-        [FromQuery] List<int>? years = null, // Binds from ?years=2020&years=2021 etc.
-        CancellationToken cancellationToken = default) // Keep CancellationToken last
+        [FromQuery] List<int>? years = null,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            // Log received filters
             _logger.LogInformation("GET /api/indicators invoked with filters: Country={Country}, Variable={Variable}, Chapter={Chapter}, Subchapter={Subchapter}, Years={Years}",
                 countryCode ?? "N/A", variableCode ?? "N/A", chapterName ?? "N/A", subchapterName ?? "N/A", years != null ? string.Join(",", years) : "N/A");
 
-            // 1. Call the application service, passing the filter parameters
             var indicators = await _indicatorService.GetIndicatorsAsync(
                 countryCode,
                 variableCode,
                 chapterName,
                 subchapterName,
-                years, // Pass the list of years
+                years,
                 cancellationToken);
 
-            // 2. Return the data
             _logger.LogInformation("Returning {Count} indicators based on filters.", indicators.Count());
             return Ok(indicators);
         }

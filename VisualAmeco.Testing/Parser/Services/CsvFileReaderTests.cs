@@ -136,7 +136,6 @@ NPTD,France,Population Data,50000,51000";
         CollectionAssert.AreEqual(expectedHeader, result.Value.Header, "Header content should match.");
         Assert.IsNotNull(result.Value.Rows, "Rows list should not be null.");
         Assert.IsEmpty(result.Value.Rows, "Rows list should be empty when only header exists.");
-        // Alternative: Assert.AreEqual(0, result.Value.Rows.Count);
     }
 
     /// <summary>
@@ -155,7 +154,6 @@ NPTD,France,Population Data,50000,51000";
         var result = await _fileReader.ReadSingleFileAsync(nonExistentFilePath);
 
         // Assert
-        // The implementation catches the exception and returns null
         Assert.IsNull(result, "Result should be null when file does not exist.");
     }
 
@@ -191,7 +189,7 @@ ValA1,ValB1"; // Second row is shorter than header
     {
         // Arrange
         var csvContent = @"ColA,ColB
-ValA1,ValB1,ValC1"; // Second row is longer than header
+ValA1,ValB1,ValC1";
         var filePath = CreateTemporaryCsvFile(csvContent, "long_row.csv");
 
         // Act
@@ -201,7 +199,6 @@ ValA1,ValB1,ValC1"; // Second row is longer than header
         Assert.IsNotNull(result, "Result should not be null.");
         Assert.AreEqual(2, result.Value.Header?.Length, "Header should have 2 columns.");
         Assert.AreEqual(1, result.Value.Rows.Count, "Should have 1 data row.");
-        // Check that the longer row was truncated to match header length
         CollectionAssert.AreEqual(new[] { "ValA1", "ValB1" }, result.Value.Rows[0], "Longer row should be truncated.");
     }
 
@@ -240,7 +237,7 @@ CODE2,NA,200";
         // Simulates header like ...,ColD,,
         var csvContent = @"ColA,ColB,ColC,ColD,,
 ValA1,ValB1,ValC1,ValD1,,
-ValA2,ValB2,,,ValE2 Ignored,ValF2 Ignored"; // Data only up to expected header length should matter
+ValA2,ValB2,,,ValE2 Ignored,ValF2 Ignored";
         var filePath = CreateTemporaryCsvFile(csvContent, "trailing_commas.csv");
         // CsvHelper reads headers including the empty ones from trailing commas
         var expectedHeader = new[] { "ColA", "ColB", "ColC", "ColD", "", "" };
@@ -256,7 +253,6 @@ ValA2,ValB2,,,ValE2 Ignored,ValF2 Ignored"; // Data only up to expected header l
         Assert.AreEqual(2, result.Value.Rows.Count);
         // Check first row (matches header length exactly)
         CollectionAssert.AreEqual(new[] { "ValA1", "ValB1", "ValC1", "ValD1", "", "" }, result.Value.Rows[0]);
-        // *** FIX IS HERE: Update expected second row to match actual data read up to header length ***
         CollectionAssert.AreEqual(new[] { "ValA2", "ValB2", "", "", "ValE2 Ignored", "ValF2 Ignored" }, result.Value.Rows[1]);
     }
 }

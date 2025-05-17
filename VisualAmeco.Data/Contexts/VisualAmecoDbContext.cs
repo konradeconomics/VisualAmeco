@@ -12,7 +12,7 @@ public class VisualAmecoDbContext : DbContext
 
     public DbSet<Chapter> Chapters => Set<Chapter>();
     public DbSet<Subchapter> Subchapters => Set<Subchapter>();
-    public DbSet<Variable> Variables => Set<Variable>(); // Changed 'Indicators' to 'Variables' for clarity
+    public DbSet<Variable> Variables => Set<Variable>();
     public DbSet<Country> Countries => Set<Country>();
     public DbSet<Value> Values => Set<Value>();
 

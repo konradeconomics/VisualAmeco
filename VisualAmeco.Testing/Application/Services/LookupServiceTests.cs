@@ -51,9 +51,9 @@ public class LookupServiceTests
             _subchapter1_2 = new Subchapter { Id = 102, Name = "Subchapter 1.2", ChapterId = 10, Chapter = _chapter1 };
             _subchapter2_1 = new Subchapter { Id = 201, Name = "Subchapter 2.1", ChapterId = 20, Chapter = _chapter2 };
 
-            _variable1 = new Variable { Id = 1010, Code = "VAR1", Name = "Variable One", Unit = "U1", SubChapterId = 101, SubChapter = _subchapter1_1 };
-            _variable2 = new Variable { Id = 1011, Code = "VAR2", Name = "Variable Two", Unit = "U2", SubChapterId = 101, SubChapter = _subchapter1_1 };
-            _variable3 = new Variable { Id = 1012, Code = "VAR3", Name = "Variable Three", Unit = "U3", SubChapterId = 102, SubChapter = _subchapter1_2 }; // Linked to subchapter 1.2
+            _variable1 = new Variable { Id = 1010, Code = "VAR1", Name = "Variable One", UnitCode = "U1", UnitDescription = "Test Unit Description", SubChapterId = 101, SubChapter = _subchapter1_1 };
+            _variable2 = new Variable { Id = 1011, Code = "VAR2", Name = "Variable Two", UnitCode = "U2", UnitDescription = "Test Unit Description", SubChapterId = 101, SubChapter = _subchapter1_1 };
+            _variable3 = new Variable { Id = 1012, Code = "VAR3", Name = "Variable Three", UnitCode = "U3", UnitDescription = "Test Unit Description", SubChapterId = 102, SubChapter = _subchapter1_2 }; // Linked to subchapter 1.2
         }
 
     /// <summary>
@@ -138,9 +138,7 @@ public class LookupServiceTests
 
         // Assert
         Assert.AreEqual(2, resultList.Count, "List should contain 2 chapters.");
-        // Optional: Check if list contains nulls if concerned
-        // Assert.IsTrue(resultList.All(c => c != null), "All ChapterDto elements in the list should be non-null.");
-
+        
         // Use simple Any() calls to verify content
         Assert.IsTrue(resultList.Any(c => c.Id == 1 && c.Name == "Chapter One"), "Chapter 1 not found or incorrect.");
         Assert.IsTrue(resultList.Any(c => c.Id == 2 && c.Name == "Chapter Two"), "Chapter 2 not found or incorrect.");
@@ -163,7 +161,7 @@ public class LookupServiceTests
 
         // Assert
         Assert.IsNotNull(result);
-        Assert.IsFalse(result.Any()); // Check the IEnumerable is empty
+        Assert.IsFalse(result.Any());
         _mockChapterRepo.Verify(r => r.GetAllAsync(), Times.Once);
     }
 
@@ -215,7 +213,6 @@ public class LookupServiceTests
     {
         // Arrange
         int filterChapterId = 10;
-        // Assume repo returns all variables for this chapter
         var mockVariables = new List<Variable> { _variable1, _variable2, _variable3 };
         _mockVariableRepo.Setup(r => r.GetFilteredAsync(filterChapterId, null)).ReturnsAsync(mockVariables);
 
@@ -225,7 +222,7 @@ public class LookupServiceTests
 
         // Assert
         Assert.IsNotNull(result);
-        Assert.AreEqual(3, resultList.Count); // All variables belong to chapter 10 in setup
+        Assert.AreEqual(3, resultList.Count);
         Assert.IsTrue(resultList.All(v => v.Code.StartsWith("VAR")));
         _mockVariableRepo.Verify(r => r.GetFilteredAsync(filterChapterId, null), Times.Once);
     }
@@ -237,8 +234,8 @@ public class LookupServiceTests
     public async Task GetVariablesAsync_FilterBySubchapterId_CallsRepoAndReturnsDtos()
     {
         // Arrange
-        int filterSubchapterId = 101; // Only VAR1 and VAR2 belong to this one
-        var mockVariables = new List<Variable> { _variable1, _variable2 }; // Repo returns only matching vars
+        int filterSubchapterId = 101;
+        var mockVariables = new List<Variable> { _variable1, _variable2 };
         _mockVariableRepo.Setup(r => r.GetFilteredAsync(null, filterSubchapterId)).ReturnsAsync(mockVariables);
 
         // Act
@@ -262,8 +259,8 @@ public class LookupServiceTests
     {
         // Arrange
         int filterChapterId = 10;
-        int filterSubchapterId = 102; // Only VAR3 belongs to this one
-        var mockVariables = new List<Variable> { _variable3 }; // Repo returns only matching var
+        int filterSubchapterId = 102;
+        var mockVariables = new List<Variable> { _variable3 };
         _mockVariableRepo.Setup(r => r.GetFilteredAsync(filterChapterId, filterSubchapterId)).ReturnsAsync(mockVariables);
 
         // Act
@@ -321,8 +318,8 @@ public class LookupServiceTests
         // Arrange
         var variableWithNullSub = new Variable
         {
-            Id = 999, Code = "VAR_NULL", Name = "Var Null Sub", Unit = "U", SubChapterId = 99, SubChapter = null!
-        }; // Simulate missing include
+            Id = 999, Code = "VAR_NULL", Name = "Var Null Sub", UnitCode = "U", UnitDescription = "Unit",SubChapterId = 99, SubChapter = null!
+        };
         var mockVariables = new List<Variable> { variableWithNullSub };
         _mockVariableRepo.Setup(r => r.GetFilteredAsync(null, null)).ReturnsAsync(mockVariables);
 

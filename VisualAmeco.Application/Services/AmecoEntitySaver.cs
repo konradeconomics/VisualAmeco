@@ -38,25 +38,23 @@ public class AmecoEntitySaver : IAmecoEntitySaver
 
     public async Task SaveAsync(MappedAmecoRow row)
     {
-        // Use Get or Add pattern correctly for parent entities
 
         Chapter? chapter = await _chapterRepo.GetByNameAsync(row.ChapterName);
         if (chapter == null)
         {
             chapter = new Chapter { Name = row.ChapterName };
-            await _chapterRepo.AddAsync(chapter); // Only Add if new
+            await _chapterRepo.AddAsync(chapter);
         }
 
-        // Pass chapter.Id (which might be 0 if new, EF Core handles linking via nav prop)
         Subchapter? subchapter = await _subchapterRepo.GetByNameAsync(row.SubchapterName, chapter.Id);
         if (subchapter == null)
         {
             subchapter = new Subchapter
             {
                 Name = row.SubchapterName,
-                Chapter = chapter // Link via navigation property
+                Chapter = chapter
             };
-            await _subchapterRepo.AddAsync(subchapter); // Only Add if new
+            await _subchapterRepo.AddAsync(subchapter);
         }
 
         Variable? variable = await _variableRepo.GetByCodeAsync(row.VariableCode);
@@ -66,10 +64,11 @@ public class AmecoEntitySaver : IAmecoEntitySaver
             {
                 Code = row.VariableCode,
                 Name = row.VariableName,
-                Unit = row.Unit,
+                UnitCode = row.UnitCode,
+                UnitDescription = row.UnitDescription,
                 SubChapter = subchapter 
             };
-            await _variableRepo.AddAsync(variable); // Only Add if new
+            await _variableRepo.AddAsync(variable);
         }
 
         Country? country = await _countryRepo.GetByCodeAsync(row.CountryCode);
@@ -80,15 +79,12 @@ public class AmecoEntitySaver : IAmecoEntitySaver
                 Code = row.CountryCode,
                 Name = row.CountryName
             };
-            await _countryRepo.AddAsync(country); // Only Add if new
+            await _countryRepo.AddAsync(country);
         }
-        // Note: Consider updating existing Country Name if it differs?
 
 
-        // Add new Value entities (assuming they don't need update logic for now)
         foreach (var valueDto in row.Values)
         {
-            // TODO: Add check if value already exists if updates are needed
             var newValue = new Value
             {
                 Variable = variable,
@@ -101,18 +97,15 @@ public class AmecoEntitySaver : IAmecoEntitySaver
             await _valueRepo.AddAsync(newValue);
         }
 
-        // Save all tracked changes (new entities, potentially updated ones if added)
         try
         {
             await _unitOfWork.SaveChangesAsync();
             _logger.LogTrace("Saved {ChangeCount} changes for VariableCode {VariableCode} / CountryCode {CountryCode}", variable.Code, country.Code);
         }
-        catch (DbUpdateException dbEx) // Catch specific EF Core update exceptions
+        catch (DbUpdateException dbEx)
         {
-            // Log with more context before re-throwing
             _logger.LogError(dbEx, "DbUpdateException saving changes for VariableCode {VariableCode} / CountryCode {CountryCode}. See inner exception.", variable?.Code ?? row.VariableCode, country?.Code ?? row.CountryCode);
-            throw; // Re-throw so the caller (AmecoCsvParser) knows the save failed for this row
+            throw;
         }
-        // Catching general Exception might hide specific DbUpdate issues if not careful
     }
 }

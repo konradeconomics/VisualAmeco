@@ -37,8 +37,8 @@ public class IndicatorServiceTests
 
         _chapter1 = new Chapter { Id = 10, Name = "Chapter One" };
         _subchapter1 = new Subchapter { Id = 101, Name = "Subchapter 1.1", ChapterId = 10, Chapter = _chapter1 };
-        _variable1 = new Variable { Id = 1010, Code = "VAR1", Name = "Variable One", Unit = "U1", SubChapterId = 101, SubChapter = _subchapter1 };
-        _variable2 = new Variable { Id = 1011, Code = "VAR2", Name = "Variable Two", Unit = "U2", SubChapterId = 101, SubChapter = _subchapter1 };
+        _variable1 = new Variable { Id = 1010, Code = "VAR1", Name = "Variable One", UnitCode = "0", UnitDescription = "Unit", SubChapterId = 101, SubChapter = _subchapter1 };
+        _variable2 = new Variable { Id = 1011, Code = "VAR2", Name = "Variable Two", UnitCode = "0", UnitDescription = "Unit", SubChapterId = 101, SubChapter = _subchapter1 };
         _country1 = new Country { Id = 20, Code = "C1", Name = "Country One" };
         _country2 = new Country { Id = 21, Code = "C2", Name = "Country Two" };
     }
@@ -308,7 +308,8 @@ public class IndicatorServiceTests
         Assert.IsNotNull(result, "Result DTO should not be null when data exists.");
         Assert.AreEqual(targetVariableCode, result!.VariableCode);
         Assert.AreEqual("Variable One", result.VariableName);
-        Assert.AreEqual("U1", result.Unit);
+        Assert.AreEqual("0", result.UnitCode);
+        Assert.AreEqual("Unit", result.UnitDescription);
         Assert.AreEqual("Subchapter 1.1", result.SubchapterName);
         Assert.AreEqual("Chapter One", result.ChapterName);
         Assert.AreEqual(targetCountryCode, result.CountryCode);
